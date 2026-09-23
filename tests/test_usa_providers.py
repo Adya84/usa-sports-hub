@@ -11,6 +11,7 @@ SPEC = importlib.util.spec_from_file_location(
 models = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(models)
 game_from_espn = models.game_from_espn
+mlb_standings = models.mlb_standings
 
 
 class ProviderModelTests(unittest.TestCase):
@@ -27,3 +28,7 @@ class ProviderModelTests(unittest.TestCase):
         self.assertEqual(game["away_score"], 14)
         self.assertTrue(game["is_live"])
         self.assertNotIn("plays", game)
+
+    def test_mlb_standings_accepts_list_records(self):
+        rows = mlb_standings({"records": [{"teamRecords": [{"team": {"name": "Rays"}, "divisionRank": "1", "wins": 90, "losses": 70, "records": []}]}]})
+        self.assertEqual(rows, [{"team": "Rays", "rank": "1", "record": "90-70", "logo": None}])

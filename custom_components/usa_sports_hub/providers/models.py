@@ -36,3 +36,20 @@ def game_from_espn(event: dict[str, Any], sport: str, league: str) -> dict[str, 
 
 def standing(team: str, rank: int | None, record: str = "", logo: str | None = None) -> dict[str, Any]:
     return {"team": team, "rank": rank, "record": record, "logo": logo}
+
+
+def mlb_standings(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    """Read MLB standings defensively; source `records` can be a list."""
+    rows: list[dict[str, Any]] = []
+    for division in payload.get("records", []) if isinstance(payload, dict) else []:
+        if not isinstance(division, dict):
+            continue
+        for team_record in division.get("teamRecords", []) or []:
+            if not isinstance(team_record, dict):
+                continue
+            team = team_record.get("team") if isinstance(team_record.get("team"), dict) else {}
+            rows.append(standing(
+                str(team.get("name") or "Team"), team_record.get("divisionRank"),
+                f"{team_record.get('wins', '')}-{team_record.get('losses', '')}",
+            ))
+    return rows
