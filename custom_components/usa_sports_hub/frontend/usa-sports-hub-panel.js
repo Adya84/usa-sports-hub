@@ -64,6 +64,9 @@ class FootballHubPanel extends HTMLElement {
     this._activeTab = ["overview", "live", "fixtures", "results", "table", "players", "my-club", "cups", "last-man-standing", "double-pick-league", "news", "tv-guide", "transfers", "supporters", "settings"].includes(savedTab)
       ? savedTab
       : "overview";
+    this._selectedSport = ["nfl", "nba", "mlb", "nhl", "mls", "more"].includes(localStorage.getItem("usa_sports_hub_selected_sport"))
+      ? localStorage.getItem("usa_sports_hub_selected_sport")
+      : "nfl";
     this._loadSidebarVisibility();
     if (!this._isSidebarTabVisible(this._activeTab)) this._activeTab = "overview";
     this._selectedFixtureTeam = localStorage.getItem("usa_sports_hub_fixture_team") || "__all__";
@@ -3692,6 +3695,11 @@ class FootballHubPanel extends HTMLElement {
     `;
   }
 
+  _sportsNav() {
+    const sports = [["nfl", "NFL", "mdi:football"], ["nba", "NBA", "mdi:basketball"], ["mlb", "MLB", "mdi:baseball"], ["nhl", "NHL", "mdi:hockey-sticks"], ["mls", "MLS", "mdi:soccer"], ["more", "More Sports", "mdi:star-four-points-outline"]];
+    return `<nav class="sports-tabs" aria-label="Sports">${sports.map(([id, label, icon]) => `<button data-sport="${id}" class="${this._selectedSport === id ? "active" : ""}" aria-pressed="${this._selectedSport === id}"><ha-icon icon="${icon}"></ha-icon><span>${label}</span></button>`).join("")}</nav>`;
+  }
+
   _overview() {
     const defaultNext = this._attrs("next_fixture");
     const last = this._attrs("last_result");
@@ -4791,8 +4799,9 @@ class FootballHubPanel extends HTMLElement {
 
     this.shadowRoot.innerHTML = `
       <style>${this._styles()}</style>
-      <div class="app-shell view-${this._viewMode}">
+      <div class="app-shell view-${this._viewMode} sport-${this._selectedSport}" style="--sport-background:url('/usa_sports_hub/background-${this._selectedSport}.png')">
         ${this._hero()}
+        ${this._sportsNav()}
         ${this._nav()}
         <main>${this._content()}${this._selectedMatchDetailsCard()}</main>
         <footer>USA Sports Hub · Built for Home Assistant</footer>
@@ -4934,6 +4943,14 @@ class FootballHubPanel extends HTMLElement {
 
     this.shadowRoot.querySelectorAll("[data-tab]").forEach((button) => {
       button.addEventListener("click", () => this._setTab(button.dataset.tab));
+    });
+    this.shadowRoot.querySelectorAll("[data-sport]").forEach((button) => {
+      button.addEventListener("click", () => {
+        this._selectedSport = button.dataset.sport;
+        localStorage.setItem("usa_sports_hub_selected_sport", this._selectedSport);
+        localStorage.setItem("usa_sports_hub_active_page", this._activeTab);
+        this._render();
+      });
     });
 
     this.shadowRoot.querySelector("#panel-back-button")?.addEventListener("click", () => {
@@ -5768,8 +5785,8 @@ class FootballHubPanel extends HTMLElement {
       .app-shell {
         min-height: 100vh;
         background:
-          linear-gradient(180deg, rgba(2, 10, 20, .18) 0%, rgba(2, 10, 20, .38) 42%, rgba(2, 10, 20, .56) 100%),
-          url("/usa_sports_hub/usa-sports-hub-background.png?v=0.2.3") center top / cover fixed no-repeat,
+          linear-gradient(180deg, rgba(2, 10, 20, .30) 0%, rgba(2, 10, 20, .54) 42%, rgba(2, 10, 20, .76) 100%),
+          var(--sport-background, url("/usa_sports_hub/usa-sports-hub-background.png")) center top / cover fixed no-repeat,
           #020b14;
       }
 
@@ -5972,6 +5989,10 @@ class FootballHubPanel extends HTMLElement {
         border-bottom: 1px solid var(--fh-border);
         scrollbar-width: none;
       }
+
+      .sports-tabs { display:flex; gap:8px; padding:12px max(16px, calc((100% - 1360px) / 2)); overflow-x:auto; background:rgba(3,12,27,.88); border-bottom:1px solid rgba(255,255,255,.1); }
+      .sports-tabs button { display:inline-flex; align-items:center; gap:7px; flex:0 0 auto; min-height:38px; padding:0 14px; border:1px solid rgba(255,255,255,.16); border-radius:999px; background:rgba(255,255,255,.06); color:#fff; cursor:pointer; font-weight:800; }
+      .sports-tabs button.active { background:linear-gradient(135deg,#b22234,#e63946); border-color:#fff; box-shadow:0 0 0 2px rgba(59,89,152,.75); }
 
       .tabs::-webkit-scrollbar { display: none; }
 

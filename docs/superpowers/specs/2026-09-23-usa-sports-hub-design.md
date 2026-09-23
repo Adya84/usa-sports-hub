@@ -16,7 +16,7 @@ A bespoke, USA-inspired SVG logo is included in 0.0.1. It combines an abstract s
 
 ## Information Architecture
 
-The persistent shell contains the logo and product name, primary navigation, a visual search placeholder, and a profile placeholder. The league selector contains NFL, NBA, MLB, NHL, MLS, and More Sports.
+The persistent shell contains the logo and product name, primary navigation, a visual search placeholder, and a profile placeholder. The first-level selector contains NFL, NBA, MLB, NHL, MLS, and More Sports. Selecting a sport opens its own second-level navigation using the familiar Football Hub dashboard pattern: Overview, Live, Fixtures, Results, Standings, Teams, Players, News, and My Team. A sport may expose an additional sport-specific game-detail view where its provider supplies the data.
 
 Each league route or tab has the same information order:
 
@@ -28,6 +28,8 @@ Each league route or tab has the same information order:
 6. Upcoming schedule.
 
 More Sports is a deliberate placeholder overview for later NCAA, F1, UFC, and other additions. It uses the shared page pattern and explains that additional sports are coming soon; it must not imply data that does not exist.
+
+Last Man Standing, Acca League/Double Pick League, pick-management workflows, payment tracking, email reminders, and public competition sharing are excluded. USA Sports Hub is a multi-sport data product rather than a competition-management product.
 
 ## Architecture
 
