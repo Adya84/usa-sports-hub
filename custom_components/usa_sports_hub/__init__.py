@@ -16,10 +16,10 @@ from .const import DOMAIN
 PLATFORMS = ["sensor"]
 PANEL_URL = "usa-sports-hub"
 PANEL_NAME = "usa-sports-hub-panel"
-PANEL_VERSION = "0.8.6"
+PANEL_VERSION = "0.0.2-beta.4"
 PANEL_STATIC_URL = "/usa_sports_hub/usa-sports-hub-panel.js"
 PANEL_MODULE_URL = f"{PANEL_STATIC_URL}?v={PANEL_VERSION}"
-PANEL_SCRIPT_PATH = Path(__file__).parent / "frontend" / "usa-sports-hub-panel.js"
+PANEL_SCRIPT_PATH = Path(__file__).parent / "frontend" / "usa-sports-hub-panel-v2.js"
 PANEL_BACKGROUND_URL = "/usa_sports_hub/usa-sports-hub-background.png"
 PANEL_BACKGROUND_PATH = Path(__file__).parent / "frontend" / "usa-sports-hub-background.png"
 PANEL_LOGO_URL = "/usa_sports_hub/usa-sports-hub-logo.png"
