@@ -1,6 +1,6 @@
 {
-  "name": "Football Hub",
+  "name": "USA Sports Hub",
   "render_readme": true,
-  "domains": ["sensor"],
+  "domains": ["usa_sports_hub"],
   "homeassistant": "2024.1.0"
 }
