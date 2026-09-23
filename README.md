@@ -1,4 +1,4 @@
-# 🇺🇸 USA Sports Hub
+# 🇺🇸 USA Sports
 
 USA Sports Hub is a Home Assistant dashboard and sensor integration for major United States sports. It uses the familiar Football Hub panel system, redesigned with a USA Sports Hub identity and multi-sport navigation.
 
