@@ -1,0 +1,19 @@
+{
+  "domain": "usa_sports_hub",
+  "name": "USA Sports Hub",
+  "codeowners": [
+    "@Adya84"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "frontend",
+    "http"
+  ],
+  "documentation": "https://github.com/Adya84/usa-sports-hub",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/Adya84/usa-sports-hub/issues",
+  "requirements": [
+    "aiohttp"
+  ],
+  "version": "0.8.6"
+}
