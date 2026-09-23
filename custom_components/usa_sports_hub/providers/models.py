@@ -53,3 +53,19 @@ def mlb_standings(payload: dict[str, Any]) -> list[dict[str, Any]]:
                 f"{team_record.get('wins', '')}-{team_record.get('losses', '')}",
             ))
     return rows
+
+
+def compact_news(articles: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep recorder-safe news fields; never retain full article bodies."""
+    result = []
+    for article in articles[:20]:
+        if not isinstance(article, dict):
+            continue
+        link = article.get("link") if isinstance(article.get("link"), dict) else {}
+        result.append({
+            "title": str(article.get("headline") or article.get("title") or "News"),
+            "summary": str(article.get("description") or "")[:300],
+            "url": link.get("web") or article.get("url"),
+            "published": article.get("published"),
+        })
+    return result

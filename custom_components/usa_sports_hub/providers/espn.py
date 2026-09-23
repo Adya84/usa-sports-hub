@@ -1,7 +1,7 @@
 """ESPN adapter shared by NFL and NBA."""
 from __future__ import annotations
 from .base import ProviderClient
-from .models import game_from_espn, standing
+from .models import compact_news, game_from_espn, standing
 
 class EspnProvider(ProviderClient):
     def __init__(self, session, sport_path: str, sport: str, league: str): super().__init__(session); self.base=f"https://site.api.espn.com/apis/site/v2/sports/{sport_path}"; self.sport=sport; self.league=league
@@ -16,7 +16,7 @@ class EspnProvider(ProviderClient):
                 rows.append(standing(team.get("displayName") or team.get("name") or "Team", stats.get("playoffSeed") or stats.get("rank"), stats.get("overall"), (team.get("logos") or [{}])[0].get("href")))
         return rows
     async def async_news(self):
-        return (await self.async_get_json(f"{self.base}/news")).get("articles",[])[:20]
+        return compact_news((await self.async_get_json(f"{self.base}/news")).get("articles",[]))
     async def async_teams(self):
         data=await self.async_get_json(f"{self.base}/teams")
         return [{"name":team.get("displayName") or team.get("name"),"id":str(team.get("id") or ""),"country":"canada" if team.get("location") in {"Toronto","Vancouver","Montreal"} else "usa"} for sport in data.get("sports",[]) for league in sport.get("leagues",[]) for item in league.get("teams",[]) for team in [item.get("team",{})] if team.get("displayName") or team.get("name")]

@@ -12,6 +12,7 @@ models = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(models)
 game_from_espn = models.game_from_espn
 mlb_standings = models.mlb_standings
+compact_news = models.compact_news
 
 
 class ProviderModelTests(unittest.TestCase):
@@ -32,3 +33,7 @@ class ProviderModelTests(unittest.TestCase):
     def test_mlb_standings_accepts_list_records(self):
         rows = mlb_standings({"records": [{"teamRecords": [{"team": {"name": "Rays"}, "divisionRank": "1", "wins": 90, "losses": 70, "records": []}]}]})
         self.assertEqual(rows, [{"team": "Rays", "rank": "1", "record": "90-70", "logo": None}])
+
+    def test_news_removes_large_article_body(self):
+        items = compact_news([{"headline": "Headline", "description": "Summary", "link": {"web": "https://example.test"}, "story": "x" * 20000}])
+        self.assertEqual(items, [{"title": "Headline", "summary": "Summary", "url": "https://example.test", "published": None}])
