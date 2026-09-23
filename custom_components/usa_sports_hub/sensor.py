@@ -1,3 +1,2 @@
 """USA Sports Hub sensor platform."""
-
-from .sensors.sensor import async_setup_entry
+from .sensors.usa_sports import async_setup_entry

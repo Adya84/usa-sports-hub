@@ -10,13 +10,13 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
-from .api.coordinator import FootballHubCoordinator
+from .coordinator import UsaSportsCoordinator
 from .const import DOMAIN
 
 PLATFORMS = ["sensor"]
 PANEL_URL = "usa-sports-hub"
 PANEL_NAME = "usa-sports-hub-panel"
-PANEL_VERSION = "0.0.2-beta.5"
+PANEL_VERSION = "0.0.2-beta.6"
 PANEL_STATIC_URL = "/usa_sports_hub/usa-sports-hub-panel.js"
 PANEL_MODULE_URL = f"{PANEL_STATIC_URL}?v={PANEL_VERSION}"
 PANEL_SCRIPT_PATH = Path(__file__).parent / "frontend" / "usa-sports-hub-panel-v2.js"
@@ -34,10 +34,7 @@ PANEL_SOUNDS_PATH = Path(__file__).parent / "frontend" / "sounds"
 
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     data = dict(entry.data)
-    data.setdefault("country", "England")
-    data.setdefault("competition", "premier_league")
-    data.setdefault("season", 2026)
-    data["provider_mode"] = "fm"
+    data["provider_mode"] = "public_sports_apis"
     hass.config_entries.async_update_entry(entry, data=data, version=3)
     return True
 
@@ -166,8 +163,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
-    coordinator = FootballHubCoordinator(hass, entry)
-    async_cleanup_obsolete_favourite_devices(hass, entry, coordinator.favourite_clubs)
+    coordinator = UsaSportsCoordinator(hass, entry)
     await coordinator.async_config_entry_first_refresh()
     hass.data[DOMAIN][entry.entry_id] = {"coordinator": coordinator}
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

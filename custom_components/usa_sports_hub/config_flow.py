@@ -7,10 +7,9 @@ import voluptuous as vol
 from homeassistant import config_entries
 
 from .const import DOMAIN
-from .competitions import DEFAULT_SEASON, SEASONS
 
 
-class FootballHubConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class UsaSportsHubConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Set up free ESPN-powered USA Sports Hub."""
 
     VERSION = 3
@@ -22,13 +21,8 @@ class FootballHubConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._abort_if_unique_id_configured()
 
             return self.async_create_entry(
-                title=f"USA Sports Hub - {SEASONS.get(DEFAULT_SEASON, DEFAULT_SEASON)}",
-                data={
-                    "country": "England",
-                    "competition": "premier_league",
-                    "season": DEFAULT_SEASON,
-                    "provider_mode": "espn",
-                },
+                title="USA Sports Hub",
+                data={"provider_mode": "public_sports_apis"},
             )
 
         return self.async_show_form(
