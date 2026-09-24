@@ -16,7 +16,7 @@ from .const import DOMAIN
 PLATFORMS = ["sensor"]
 PANEL_URL = "usa-sports-hub"
 PANEL_NAME = "usa-sports-hub-panel"
-PANEL_VERSION = "0.0.2-beta.9"
+PANEL_VERSION = "0.0.3-beta.1"
 PANEL_STATIC_URL = "/usa_sports_hub/usa-sports-hub-panel.js"
 PANEL_MODULE_URL = f"{PANEL_STATIC_URL}?v={PANEL_VERSION}"
 PANEL_SCRIPT_PATH = Path(__file__).parent / "frontend" / "usa-sports-hub-panel-v2.js"
@@ -34,7 +34,7 @@ PANEL_SOUNDS_PATH = Path(__file__).parent / "frontend" / "sounds"
 
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     data = dict(entry.data)
-    data["provider_mode"] = "public_sports_apis"
+    data["provider_mode"] = "thescore"
     hass.config_entries.async_update_entry(entry, data=data, version=3)
     return True
 

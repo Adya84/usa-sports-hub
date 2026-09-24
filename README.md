@@ -2,18 +2,18 @@
 
 USA Sports Hub is a Home Assistant dashboard and sensor integration for major United States sports. It uses the familiar Football Hub panel system, redesigned with a USA Sports Hub identity and multi-sport navigation.
 
-> **Project status:** 0.0.1 is under active development. The integration foundation and USA Sports Hub panel are being adapted now; live provider modules are being added for NFL, NBA, MLB, and NHL.
+> **Project status:** 0.0.3 beta is under active development. NFL, NBA, MLB and NHL now use a unified theScore data provider with detailed live event, standings, box-score and play-by-play support.
 
 ## Planned sports
 
-- 🏈 NFL — ESPN
-- 🏀 NBA — ESPN
-- ⚾ MLB — MLB Stats API
-- 🏒 NHL — NHL API
+- 🏈 NFL — theScore
+- 🏀 NBA — theScore
+- ⚾ MLB — theScore
+- 🏒 NHL — theScore
 - ⚽ MLS — planned
 - ⭐ More Sports — WNBA, NCAA, F1, UFC and further sports planned
 
-The initial providers use public JSON endpoints and do not require users to create API keys.
+The integration uses public JSON endpoints from theScore and does not require users to create an API key.
 
 ## Features
 
@@ -85,13 +85,13 @@ USA Sports Hub keeps providers separate from the panel and sensor models:
 
 ```text
 USA Sports Hub
-├── NFL  → ESPN
-├── NBA  → ESPN
-├── MLB  → MLB Stats API
-└── NHL  → NHL API
+├── NFL  → theScore
+├── NBA  → theScore
+├── MLB  → theScore
+└── NHL  → theScore
 ```
 
-This makes future providers, league additions, and provider fallbacks possible without breaking existing entities or automations.
+The shared theScore adapter uses league-specific event, standings, team, box-score and live-detail endpoints while keeping the dashboard model consistent across sports.
 
 ## Development
 

@@ -1,4 +1,4 @@
-"""Provider normalization contracts for USA Sports Hub."""
+"""Provider normalization contracts for theScore-backed USA Sports Hub."""
 
 import importlib.util
 import unittest
@@ -10,30 +10,80 @@ SPEC = importlib.util.spec_from_file_location(
 )
 models = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(models)
-game_from_espn = models.game_from_espn
-mlb_standings = models.mlb_standings
-compact_news = models.compact_news
+
+normalize_event = models.normalize_the_score_event
+normalize_standing = models.normalize_the_score_standing
+compact_news = models.compact_the_score_news
 
 
 class ProviderModelTests(unittest.TestCase):
-    def test_espn_event_becomes_a_compact_game(self):
+    def test_the_score_event_keeps_live_detail(self):
         event = {
-            "id": "1", "date": "2026-09-24T18:00Z", "status": {"type": {"state": "in", "shortDetail": "Q2 04:12", "completed": False}},
-            "competitions": [{"venue": {"fullName": "Test Arena"}, "competitors": [
-                {"homeAway": "home", "team": {"id": "10", "displayName": "Home", "abbreviation": "HOM", "logos": [{"href": "home.png"}]}, "score": "21"},
-                {"homeAway": "away", "team": {"id": "20", "displayName": "Away", "abbreviation": "AWY", "logos": [{"href": "away.png"}]}, "score": "14"},
-            ]}],
+            "id": 123,
+            "event_status": "in_progress",
+            "game_date": "2026-09-24T00:00:00Z",
+            "stadium": "Test Arena",
+            "has_play_by_play_records": True,
+            "home_team": {
+                "id": 1, "full_name": "Home Team", "abbreviation": "HOM",
+                "logos": {"w72xh72": "home.png"}, "colour_1": "111111",
+            },
+            "away_team": {
+                "id": 2, "full_name": "Away Team", "abbreviation": "AWY",
+                "logos": {"w72xh72": "away.png"}, "colour_1": "222222",
+            },
+            "box_score": {
+                "id": 99,
+                "has_statistics": True,
+                "api_uri": "/nfl/box_scores/99",
+                "progress": {"clock_label": "Q2 04:12", "segment": 2, "clock": "4:12"},
+                "score": {"home": {"score": 21}, "away": {"score": 14}},
+            },
         }
-        game = game_from_espn(event, "nfl", "NFL")
-        self.assertEqual(game["home_team"], "Home")
+        game = normalize_event(event, "nfl")
+        self.assertEqual(game["home_team"], "Home Team")
         self.assertEqual(game["away_score"], 14)
         self.assertTrue(game["is_live"])
-        self.assertNotIn("plays", game)
+        self.assertTrue(game["has_play_by_play_records"])
+        self.assertEqual(game["box_score_uri"], "/nfl/box_scores/99")
+        self.assertEqual(game["clock"], "4:12")
 
-    def test_mlb_standings_accepts_list_records(self):
-        rows = mlb_standings({"records": [{"teamRecords": [{"team": {"name": "Rays"}, "divisionRank": "1", "wins": 90, "losses": 70, "records": []}]}]})
-        self.assertEqual(rows, [{"team": "Rays", "rank": "1", "record": "90-70", "logo": None}])
+    def test_the_score_standing_keeps_sport_specific_fields(self):
+        row = {
+            "id": 3227,
+            "wins": 97,
+            "losses": 60,
+            "short_record": "97-60",
+            "division_rank": 1,
+            "formatted_rank": "1st NL West",
+            "runs_differential": 200,
+            "clinched_playoffs": True,
+            "team": {
+                "id": 26,
+                "full_name": "Los Angeles Dodgers",
+                "abbreviation": "LAD",
+                "logos": {"small": "lad.png"},
+            },
+        }
+        item = normalize_standing(row, "mlb")
+        self.assertEqual(item["team"], "Los Angeles Dodgers")
+        self.assertEqual(item["record"], "97-60")
+        self.assertEqual(item["runs_differential"], 200)
+        self.assertTrue(item["clinched_playoffs"])
 
-    def test_news_removes_large_article_body(self):
-        items = compact_news([{"headline": "Headline", "description": "Summary", "link": {"web": "https://example.test"}, "story": "x" * 20000}])
-        self.assertEqual(items, [{"title": "Headline", "summary": "Summary", "url": "https://example.test", "published": None}])
+    def test_news_is_built_from_the_score_event_articles(self):
+        items = compact_news([
+            {
+                "id": 1,
+                "updated_at": "now",
+                "recap": "/articles/1",
+                "recap_data": {"headline": "Game recap", "abstract": "Summary"},
+            }
+        ])
+        self.assertEqual(items[0]["title"], "Game recap")
+        self.assertEqual(items[0]["kind"], "recap")
+        self.assertIn("thescore.com/articles/1", items[0]["url"])
+
+
+if __name__ == "__main__":
+    unittest.main()
