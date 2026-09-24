@@ -489,6 +489,26 @@ class TSProvider(ProviderClient):
 
             offense = linescore.get("offense") if isinstance(linescore.get("offense"), dict) else {}
             defense = linescore.get("defense") if isinstance(linescore.get("defense"), dict) else {}
+            # The linescore offense/defense blocks can omit names depending
+            # on game state. Fall back to the current play matchup so "At Bat"
+            # remains populated during live play.
+            plays_root = mlb_live_data.get("plays") if isinstance(mlb_live_data.get("plays"), dict) else {}
+            current_play = plays_root.get("currentPlay") if isinstance(plays_root.get("currentPlay"), dict) else {}
+            matchup = current_play.get("matchup") if isinstance(current_play.get("matchup"), dict) else {}
+            current_batter = matchup.get("batter") if isinstance(matchup.get("batter"), dict) else {}
+            current_pitcher = matchup.get("pitcher") if isinstance(matchup.get("pitcher"), dict) else {}
+
+            batter_name = (
+                ((offense.get("batter") or {}).get("fullName") if isinstance(offense.get("batter"), dict) else None)
+                or current_batter.get("fullName")
+                or current_batter.get("name")
+            )
+            pitcher_name = (
+                ((defense.get("pitcher") or {}).get("fullName") if isinstance(defense.get("pitcher"), dict) else None)
+                or current_pitcher.get("fullName")
+                or current_pitcher.get("name")
+            )
+
             current_situation = {
                 "name": "Current game situation",
                 "inning": linescore.get("currentInning"),
@@ -497,8 +517,8 @@ class TSProvider(ProviderClient):
                 "balls": linescore.get("balls"),
                 "strikes": linescore.get("strikes"),
                 "outs": linescore.get("outs"),
-                "batter": ((offense.get("batter") or {}).get("fullName") if isinstance(offense.get("batter"), dict) else None),
-                "pitcher": ((defense.get("pitcher") or {}).get("fullName") if isinstance(defense.get("pitcher"), dict) else None),
+                "batter": batter_name,
+                "pitcher": pitcher_name,
                 "first_base": bool(offense.get("first")),
                 "second_base": bool(offense.get("second")),
                 "third_base": bool(offense.get("third")),
