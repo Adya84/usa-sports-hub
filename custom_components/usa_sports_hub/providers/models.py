@@ -1,4 +1,4 @@
-"""Provider-independent normalizers for CG payloads."""
+"""Provider-independent normalizers for TS payloads."""
 from __future__ import annotations
 
 from typing import Any
@@ -20,7 +20,7 @@ def _logo(team: dict[str, Any]) -> str | None:
     return logos.get("w72xh72") or logos.get("small") or logos.get("large")
 
 
-def normalize_cg_team(team: dict[str, Any]) -> dict[str, Any]:
+def normalize_ts_team(team: dict[str, Any]) -> dict[str, Any]:
     location = str(team.get("location") or "")
     canada = {
         "Toronto", "Vancouver", "Montreal", "Montréal", "Ottawa",
@@ -45,7 +45,7 @@ def normalize_cg_team(team: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def normalize_cg_event(event: dict[str, Any], league: str) -> dict[str, Any]:
+def normalize_ts_event(event: dict[str, Any], league: str) -> dict[str, Any]:
     home = event.get("home_team") if isinstance(event.get("home_team"), dict) else {}
     away = event.get("away_team") if isinstance(event.get("away_team"), dict) else {}
     box = event.get("box_score") if isinstance(event.get("box_score"), dict) else {}
@@ -139,9 +139,9 @@ def normalize_cg_event(event: dict[str, Any], league: str) -> dict[str, Any]:
     }
 
 
-def normalize_cg_standing(row: dict[str, Any], league: str) -> dict[str, Any]:
+def normalize_ts_standing(row: dict[str, Any], league: str) -> dict[str, Any]:
     team = row.get("team") if isinstance(row.get("team"), dict) else {}
-    normalized_team = normalize_cg_team(team)
+    normalized_team = normalize_ts_team(team)
     record = row.get("short_record")
     if not record:
         wins, losses = row.get("wins"), row.get("losses")
@@ -193,7 +193,7 @@ def normalize_cg_standing(row: dict[str, Any], league: str) -> dict[str, Any]:
     }
 
 
-def compact_cg_news(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def compact_ts_news(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Build recorder-safe preview/recap cards from event metadata."""
     result: list[dict[str, Any]] = []
     seen: set[str] = set()
