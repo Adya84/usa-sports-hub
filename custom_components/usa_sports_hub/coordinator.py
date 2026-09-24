@@ -20,6 +20,8 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
 
     def __init__(self, hass, entry):
         self.entry = entry
+        self.selected_live_game_id = None
+        self.selected_live_sport = None
         session = async_get_clientsession(hass)
         self.providers = {
             "nfl": NflProvider(session),
@@ -63,8 +65,15 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
                 if not game.get("is_live") and not game.get("is_final")
             ]
             finished = [game for game in games if game.get("is_final")]
+            selected = None
+            if self.selected_live_sport == sport and self.selected_live_game_id:
+                selected = next(
+                    (game for game in games if str(game.get("game_id")) == str(self.selected_live_game_id)),
+                    None,
+                )
             detail_target = (
-                live[0] if live
+                selected if selected
+                else live[0] if live
                 else upcoming[0] if upcoming
                 else finished[-1] if finished
                 else None
@@ -90,6 +99,26 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
         except (ProviderError, ValueError, KeyError, TypeError) as err:
             self.cache[sport] = {**self.cache[sport], "error": str(err)}
             _LOGGER.warning("%s theScore refresh failed: %s", sport.upper(), err)
+
+    async def async_set_selected_live_match(self, fixture_id):
+        """Select a live game from the panel and refresh its detailed feed."""
+        game_id = str(fixture_id or "").strip()
+        if not game_id:
+            self.selected_live_game_id = None
+            self.selected_live_sport = None
+            await self.async_request_refresh()
+            return
+
+        for sport, item in self.cache.items():
+            for game in item.get("games", []) or []:
+                if str(game.get("game_id") or "") == game_id:
+                    self.selected_live_game_id = game_id
+                    self.selected_live_sport = sport
+                    await self.async_request_refresh()
+                    return
+
+        self.selected_live_game_id = game_id
+        await self.async_request_refresh()
 
     async def _async_update_data(self):
         await asyncio.gather(*(self._refresh_sport(sport) for sport in SPORTS))
