@@ -700,6 +700,11 @@ class TSProvider(ProviderClient):
             plays_root = mlb_live_data.get("plays") if isinstance(mlb_live_data.get("plays"), dict) else {}
             all_mlb_plays = plays_root.get("allPlays") if isinstance(plays_root.get("allPlays"), list) else []
             clean_scoring: list[dict[str, Any]] = []
+            player_directory = (
+                mlb_game_data.get("players")
+                if isinstance(mlb_game_data.get("players"), dict)
+                else {}
+            )
             for play in all_mlb_plays:
                 if not isinstance(play, dict):
                     continue
@@ -710,6 +715,33 @@ class TSProvider(ProviderClient):
                 matchup = play.get("matchup") if isinstance(play.get("matchup"), dict) else {}
                 batter = matchup.get("batter") if isinstance(matchup.get("batter"), dict) else {}
                 scoring_player_id = str(batter.get("id") or "")
+                # Some completed-game play records omit matchup.batter. Their
+                # credited player still appears in play.players; use it so a
+                # scoring summary always has an ID for its portrait.
+                if not scoring_player_id:
+                    credits = play.get("players") if isinstance(play.get("players"), list) else []
+                    credited = next(
+                        (
+                            item.get("player") for item in credits
+                            if isinstance(item, dict)
+                            and isinstance(item.get("player"), dict)
+                            and str(item.get("playerType") or "").lower()
+                            in {"batter", "hitter", "scorer"}
+                        ),
+                        {},
+                    )
+                    scoring_player_id = str(credited.get("id") or "") if isinstance(credited, dict) else ""
+                directory_player = (
+                    player_directory.get(f"ID{scoring_player_id}")
+                    or player_directory.get(scoring_player_id)
+                    or {}
+                )
+                scoring_name = (
+                    batter.get("fullName")
+                    or batter.get("name")
+                    or directory_player.get("fullName")
+                    or directory_player.get("name")
+                )
                 clean_scoring.append(
                     {
                         "description": result.get("description") or result.get("event"),
@@ -719,8 +751,9 @@ class TSProvider(ProviderClient):
                         "away_score": result.get("awayScore"),
                         "home_score": result.get("homeScore"),
                         "rbi": result.get("rbi"),
+                        "id": scoring_player_id,
                         "player_id": scoring_player_id,
-                        "player_name": batter.get("fullName") or batter.get("name"),
+                        "player_name": scoring_name,
                         "headshot": f"{MLB_HEADSHOT_BASE}/{scoring_player_id}/headshot/67/current" if scoring_player_id else None,
                     }
                 )
