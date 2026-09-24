@@ -731,6 +731,28 @@ class TSProvider(ProviderClient):
                         {},
                     )
                     scoring_player_id = str(credited.get("id") or "") if isinstance(credited, dict) else ""
+                # Historical/final feeds can provide neither matchup nor a
+                # credited-player record, while the scorer's name remains in
+                # the result description (for example, "Jose Altuve singles").
+                # Resolve it against the official player directory so the
+                # portrait always gets an MLB player ID.
+                if not scoring_player_id:
+                    description = str(result.get("description") or "").casefold()
+                    directory_matches = []
+                    for key, candidate in player_directory.items():
+                        if not isinstance(candidate, dict):
+                            continue
+                        candidate_name = str(
+                            candidate.get("fullName") or candidate.get("name") or ""
+                        ).strip()
+                        if candidate_name and candidate_name.casefold() in description:
+                            directory_matches.append((len(candidate_name), key, candidate))
+                    if directory_matches:
+                        _, matched_key, matched_player = max(directory_matches)
+                        scoring_player_id = str(
+                            matched_player.get("id")
+                            or str(matched_key).removeprefix("ID")
+                        )
                 directory_player = (
                     player_directory.get(f"ID{scoring_player_id}")
                     or player_directory.get(scoring_player_id)
