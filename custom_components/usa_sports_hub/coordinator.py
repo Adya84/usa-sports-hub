@@ -197,6 +197,15 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
         self.selected_live_game_id = game_id
         self.selected_live_sport = matched_sport
         if matched_sport:
+            # Clear the previous selection before awaiting the new request.
+            # This prevents one game's lineups, venue and live state appearing
+            # briefly beneath a newly clicked matchup.
+            self.cache[matched_sport] = {
+                **self.cache[matched_sport],
+                "detail": {},
+                "error": None,
+            }
+            self.async_set_updated_data(self._compose_data())
             try:
                 detail = await self.providers[matched_sport].async_game_detail(game_id)
                 self.cache[matched_sport] = {

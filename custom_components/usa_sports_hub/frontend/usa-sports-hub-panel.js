@@ -437,7 +437,8 @@ UsaSportsHubPanel.prototype.mlbGameCentre=function(s,items,sensor){
   const selected=all.find(game=>String(game.game_id||'')===String(this.selectedLiveGame||''))||{};
   const liveOrFinal=Boolean(selected.is_live||selected.is_final);
   const event=sensor('game_detail')?.attributes?.game_detail||{};
-  const verified=Boolean(event.mlb_live_verified);
+  const detailMatches=String(event.game_id||'')===String(this.selectedLiveGame||'');
+  const verified=detailMatches&&Boolean(event.mlb_live_verified);
   const names=new Set([selected.home_team,selected.away_team].filter(Boolean).map(name=>String(name).toLowerCase()));
   const fields=['lineups','players','statistics','situations','play_by_play','scoring','officials','odds','stadium'];
   const safeSensor=name=>{
