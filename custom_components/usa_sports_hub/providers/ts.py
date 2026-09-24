@@ -18,6 +18,7 @@ API_BASE = "https://api." + "the" + "score.com"
 WEB_API_BASE = "https://www." + "the" + "score.com/api"
 MLB_STATS_BASE = "https://statsapi.mlb.com/api/v1"
 MLB_LIVE_BASE = "https://statsapi.mlb.com/api/v1.1"
+MLB_HEADSHOT_BASE = "https://img.mlbstatic.com/mlb-photos/image/upload/w_180,q_auto:best/v1/people"
 
 
 def _walk(value: Any):
@@ -578,8 +579,9 @@ class TSProvider(ProviderClient):
                     name = person.get("fullName") or person.get("name")
                     if not name:
                         continue
+                    player_id = str(person.get("id") or "")
                     base = {
-                        "id": str(person.get("id") or ""),
+                        "id": player_id,
                         "full_name": name,
                         "team_name": team_name,
                         "side": side,
@@ -588,6 +590,7 @@ class TSProvider(ProviderClient):
                         "jersey_number": player.get("jerseyNumber"),
                         "batting_order": player.get("battingOrder"),
                         "game_status": player.get("gameStatus"),
+                        "headshot": f"{MLB_HEADSHOT_BASE}/{player_id}/headshot/silo/current" if player_id else None,
                     }
                     clean_players.append(base)
 
@@ -607,6 +610,8 @@ class TSProvider(ProviderClient):
                         row = {
                             "name": name,
                             "full_name": name,
+                            "player_id": player_id,
+                            "headshot": base.get("headshot"),
                             "team_name": team_name,
                             "position_abbreviation": base.get("position_abbreviation"),
                             "group": group_name,
@@ -650,6 +655,9 @@ class TSProvider(ProviderClient):
                 if not about.get("isScoringPlay"):
                     continue
                 result = play.get("result") if isinstance(play.get("result"), dict) else {}
+                matchup = play.get("matchup") if isinstance(play.get("matchup"), dict) else {}
+                batter = matchup.get("batter") if isinstance(matchup.get("batter"), dict) else {}
+                scoring_player_id = str(batter.get("id") or "")
                 clean_scoring.append(
                     {
                         "description": result.get("description") or result.get("event"),
@@ -659,6 +667,9 @@ class TSProvider(ProviderClient):
                         "away_score": result.get("awayScore"),
                         "home_score": result.get("homeScore"),
                         "rbi": result.get("rbi"),
+                        "player_id": scoring_player_id,
+                        "player_name": batter.get("fullName") or batter.get("name"),
+                        "headshot": f"{MLB_HEADSHOT_BASE}/{scoring_player_id}/headshot/silo/current" if scoring_player_id else None,
                     }
                 )
             detail["scoring"] = clean_scoring
