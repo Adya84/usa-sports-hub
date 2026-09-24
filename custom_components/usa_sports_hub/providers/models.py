@@ -80,12 +80,18 @@ def _team_person(row: dict[str, Any]) -> dict[str, Any]:
 def _compact_team_statistics(rows: Any) -> list[dict[str, Any]]:
     result = []
     for row in _team_collection(rows)[:80]:
+        if not row:
+            continue
         person = _team_person(row)
+        label = row.get("category") or row.get("stat_name") or row.get("stat") or row.get("name")
+        value = row.get("value") or row.get("display_value") or row.get("stat_value") or ""
+        if not label and not value and person["player_name"] == "Player":
+            continue
         result.append({
             **person,
             "name": person["player_name"],
-            "label": row.get("category") or row.get("stat_name") or row.get("stat") or row.get("name") or "Season statistic",
-            "value": row.get("value") or row.get("display_value") or row.get("stat_value") or "",
+            "label": label or "Season statistic",
+            "value": value,
         })
     return result
 
@@ -93,12 +99,18 @@ def _compact_team_statistics(rows: Any) -> list[dict[str, Any]]:
 def _compact_team_leaders(rows: Any) -> list[dict[str, Any]]:
     result = []
     for row in _team_collection(rows)[:24]:
+        if not row:
+            continue
         person = _team_person(row)
+        label = row.get("category") or row.get("label") or row.get("stat_name")
+        value = row.get("stat") or row.get("value") or row.get("display_value") or row.get("stat_value") or ""
+        if not label and not value and person["player_name"] == "Player":
+            continue
         result.append({
             **person,
             "name": person["player_name"],
-            "label": row.get("category") or row.get("label") or row.get("stat_name") or "Leader",
-            "value": row.get("stat") or row.get("value") or row.get("display_value") or row.get("stat_value") or "",
+            "label": label or "Leader",
+            "value": value,
         })
     return result
 
@@ -106,11 +118,16 @@ def _compact_team_leaders(rows: Any) -> list[dict[str, Any]]:
 def _compact_team_injuries(rows: Any) -> list[dict[str, Any]]:
     result = []
     for row in _team_collection(rows)[:40]:
+        if not row:
+            continue
         person = _team_person(row)
+        status = row.get("status") or row.get("injury_status") or row.get("injury")
+        if not status and person["player_name"] == "Player":
+            continue
         result.append({
             **person,
             "name": person["player_name"],
-            "status": row.get("status") or row.get("injury_status") or row.get("injury") or "Injury report",
+            "status": status or "Injury report",
             "note": row.get("description") or row.get("injury_note") or "",
         })
     return result

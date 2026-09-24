@@ -59,6 +59,12 @@ class ProviderModelTests(unittest.TestCase):
         self.assertEqual(detail["statistics"][0]["player_name"], "CJ Abrams")
         self.assertEqual(detail["injuries"][0]["player_name"], "Josiah Gray")
 
+    def test_team_detail_drops_empty_provider_stat_rows(self):
+        detail = normalize_team_detail("mlb", {"id": 1}, [], [{}, {}], [{}, {}], [{}, {}])
+        self.assertEqual(detail["statistics"], [])
+        self.assertEqual(detail["leaders"], [])
+        self.assertEqual(detail["injuries"], [])
+
     def test_provider_has_dedicated_team_data_endpoints(self):
         source = Path("custom_components/usa_sports_hub/providers/ts.py").read_text(encoding="utf-8")
         self.assertIn("async def async_team_detail", source)
