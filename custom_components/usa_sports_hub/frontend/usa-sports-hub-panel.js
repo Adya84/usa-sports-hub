@@ -240,7 +240,7 @@ class UsaSportsHubPanel extends HTMLElement {
     ].filter(Boolean).join(' · ');
 
     return '<section class="mlb-centre reference-style">'+
-      '<div class="game-centre-top"><button class="live-back" data-live-close>← BACK</button><span class="game-status '+(game.is_live?'live':'')+'">'+(game.is_live?'<i></i> ':'')+status+'</span><small>'+(loaded?'GAME DATA LIVE':'LOADING GAME DATA…')+'</small></div>'+
+      '<div class="game-centre-top"><button class="live-back" data-live-close>← BACK</button><span class="game-status '+(game.is_live?'live':'')+'">'+(game.is_live?'<i></i> ':'')+status+'</span><small>'+(loaded?'GAME DATA LIVE':'Loading game data — this can take up to 30 seconds')+'</small></div>'+
       '<div class="mlb-reference-grid">'+
         '<main class="mlb-main-column">'+
           '<section class="mlb-matchup-bar"><span>'+esc(inningLabel||game.status_detail||'Game')+'</span><span>◆ '+esc((situation.balls??0)+'-'+(situation.strikes??0)+' · '+(situation.outs??0)+' out'+((situation.outs??0)===1?'':'s'))+'</span></section>'+
@@ -435,11 +435,26 @@ const usaMlbGameCentre=UsaSportsHubPanel.prototype.mlbGameCentre;
 UsaSportsHubPanel.prototype.mlbGameCentre=function(s,items,sensor){
   const all=[...(items('live')||[]),...(items('fixtures')||[]),...(items('results')||[])];
   const selected=all.find(game=>String(game.game_id||'')===String(this.selectedLiveGame||''))||{};
+  const selectedGameId=String(this.selectedLiveGame||'');
   const event=sensor('game_detail')?.attributes?.game_detail||{};
-  const detailMatches=String(event.game_id||'')===String(this.selectedLiveGame||'');
-  const fields=['box_score','lineups','players','statistics','situations','play_by_play','scoring','officials','odds','stadium','periods','leaders'];
+  const activeDetailId=String(event.game_id||'');
+  const fields=['game_detail','box_score','lineups','players','statistics','situations','play_by_play','scoring','officials','odds','stadium','periods','leaders'];
+  this._gameDetailCache=this._gameDetailCache||new Map();
+  if(activeDetailId){
+    const snapshot={};
+    for(const field of fields){
+      snapshot[field]=field==='game_detail' ? event : (sensor(field)?.attributes?.[field] ?? (['box_score','odds','stadium'].includes(field)?{}:[]));
+    }
+    this._gameDetailCache.set(activeDetailId,snapshot);
+    while(this._gameDetailCache.size>12)this._gameDetailCache.delete(this._gameDetailCache.keys().next().value);
+  }
+  const cachedSnapshot=this._gameDetailCache.get(selectedGameId);
+  const detailMatches=activeDetailId===selectedGameId;
   const safeSensor=name=>{
     const state=sensor(name); if(!state||!fields.includes(name))return state;
+    if(!detailMatches&&cachedSnapshot){
+      return {...state,attributes:{...state.attributes,[name]:cachedSnapshot[name]}};
+    }
     // Keep the prior game invisible only while the newly selected game is
     // loading. Once its detail event matches, render every clean provider
     // section; verification belongs in the provider, not as a UI kill switch.
