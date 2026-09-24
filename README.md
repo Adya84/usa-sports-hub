@@ -2,18 +2,18 @@
 
 USA Sports Hub is a Home Assistant dashboard and sensor integration for major United States sports. It uses the familiar Football Hub panel system, redesigned with a USA Sports Hub identity and multi-sport navigation.
 
-> **Project status:** 0.0.3 beta is under active development. NFL, NBA, MLB and NHL now use a unified theScore data provider with detailed live event, standings, box-score and play-by-play support.
+> **Project status:** 0.0.3 beta is under active development. NFL, NBA, MLB and NHL now use a unified TS data provider with detailed live event, standings, box-score and play-by-play support.
 
 ## Planned sports
 
-- 🏈 NFL — theScore
-- 🏀 NBA — theScore
-- ⚾ MLB — theScore
-- 🏒 NHL — theScore
+- 🏈 NFL — TS
+- 🏀 NBA — TS
+- ⚾ MLB — TS
+- 🏒 NHL — TS
 - ⚽ MLS — planned
 - ⭐ More Sports — WNBA, NCAA, F1, UFC and further sports planned
 
-The integration uses public JSON endpoints from theScore and does not require users to create an API key.
+The integration uses public JSON endpoints from TS and does not require users to create an API key.
 
 ## Features
 
@@ -85,13 +85,13 @@ USA Sports Hub keeps providers separate from the panel and sensor models:
 
 ```text
 USA Sports Hub
-├── NFL  → theScore
-├── NBA  → theScore
-├── MLB  → theScore
-└── NHL  → theScore
+├── NFL  → TS
+├── NBA  → TS
+├── MLB  → TS
+└── NHL  → TS
 ```
 
-The shared theScore adapter uses league-specific event, standings, team, box-score and live-detail endpoints while keeping the dashboard model consistent across sports.
+The shared TS adapter uses league-specific event, standings, team, box-score and live-detail endpoints while keeping the dashboard model consistent across sports.
 
 ## Development
 
@@ -125,4 +125,4 @@ You can also support the project by starring the repository and reporting issues
 
 ## Disclaimer
 
-USA Sports Hub is an independent Home Assistant integration. It is not affiliated with, endorsed by, or sponsored by Home Assistant, HACS, theScore, MLB, NHL, NBA, NFL, MLS, or any other league, team, broadcaster, or data provider. Team names, league names, and logos remain the property of their respective owners.
+USA Sports Hub is an independent Home Assistant integration. It is not affiliated with, endorsed by, or sponsored by Home Assistant, HACS, TS, MLB, NHL, NBA, NFL, MLS, or any other league, team, broadcaster, or data provider. Team names, league names, and logos remain the property of their respective owners.
