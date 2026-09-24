@@ -1,6 +1,7 @@
 """Unified TS provider for NFL, NBA, MLB and NHL."""
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import Any
 from urllib.parse import urlencode
@@ -207,13 +208,17 @@ class TSProvider(ProviderClient):
 
         # NFL exposes drive endpoints whose payloads contain the full play list.
         drive_uris = _api_uris(box_score, f"/{self.league}/drives/")[:24]
-        for uri in drive_uris:
-            drive = await self.async_get_json(f"{API_BASE}{uri}")
-            if isinstance(drive, dict):
-                detail["drives"].append(drive)
-                records = drive.get("play_by_play_detail_records")
-                if isinstance(records, list):
-                    detail["play_by_play"].extend(records)
+        if drive_uris:
+            drive_results = await asyncio.gather(
+                *(self.async_get_json(f"{API_BASE}{uri}") for uri in drive_uris),
+                return_exceptions=True,
+            )
+            for drive in drive_results:
+                if isinstance(drive, dict):
+                    detail["drives"].append(drive)
+                    records = drive.get("play_by_play_detail_records")
+                    if isinstance(records, list):
+                        detail["play_by_play"].extend(records)
 
         # Other sports often embed their records directly in the box score.
         if not detail["play_by_play"]:
@@ -330,15 +335,21 @@ class TSProvider(ProviderClient):
             "official", "pitcher", "batter", "skater", "goalie",
         )
         related_payloads: list[Any] = []
-        for uri in [
+        # MLB's rich live feed already includes players, lineups, stats and
+        # officials, so avoid extra TS detail calls. For other sports, fetch
+        # advertised detail endpoints concurrently rather than one-by-one.
+        selected_related_uris = [] if (self.league == "mlb" and mlb_live_data) else [
             uri for uri in related_uris
             if any(fragment in uri.lower() for fragment in allowed_fragments)
-        ][:20]:
-            try:
-                payload = await self.async_get_json(f"{API_BASE}{uri}")
-            except Exception:
-                continue
-            related_payloads.append(payload)
+        ][:20]
+        if selected_related_uris:
+            related_results = await asyncio.gather(
+                *(self.async_get_json(f"{API_BASE}{uri}") for uri in selected_related_uris),
+                return_exceptions=True,
+            )
+            related_payloads.extend(
+                payload for payload in related_results if isinstance(payload, (dict, list))
+            )
 
         detail["related"] = related_payloads[:20]
 
