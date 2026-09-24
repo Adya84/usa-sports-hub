@@ -436,16 +436,22 @@ UsaSportsHubPanel.prototype.mlbGameCentre=function(s,items,sensor){
   const all=[...(items('live')||[]),...(items('fixtures')||[]),...(items('results')||[])];
   const selected=all.find(game=>String(game.game_id||'')===String(this.selectedLiveGame||''))||{};
   const liveOrFinal=Boolean(selected.is_live||selected.is_final);
+  const event=sensor('game_detail')?.attributes?.game_detail||{};
+  const verified=Boolean(event.mlb_live_verified);
   const names=new Set([selected.home_team,selected.away_team].filter(Boolean).map(name=>String(name).toLowerCase()));
-  const fields=['lineups','players','statistics','situations','play_by_play','scoring'];
+  const fields=['lineups','players','statistics','situations','play_by_play','scoring','officials','odds','stadium'];
   const safeSensor=name=>{
     const state=sensor(name); if(!state||!fields.includes(name))return state;
     const source=state.attributes?.[name]||[];
+    if(!verified){
+      const empty=['odds','stadium'].includes(name)?{}:[];
+      return {...state,attributes:{...state.attributes,[name]:empty}};
+    }
     const allowed=name==='situations'?Boolean(selected.is_live):liveOrFinal;
+    if(['odds','stadium'].includes(name))return state;
     const filtered=!allowed||!Array.isArray(source)?[]:
-      (name==='situations'?source:(['lineups','players'].includes(name)
-        ?source.filter(row=>names.has(String(row?.team_name||'').toLowerCase()))
-        :source));
+      (name==='situations'||name==='play_by_play'||name==='scoring'||name==='officials'?source:
+        source.filter(row=>names.has(String(row?.team_name||'').toLowerCase())));
     return {...state,attributes:{...state.attributes,[name]:filtered}};
   };
   let html=usaMlbGameCentre.call(this,s,items,safeSensor)

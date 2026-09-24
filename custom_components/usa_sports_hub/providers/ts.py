@@ -856,6 +856,12 @@ class TSProvider(ProviderClient):
                     "state": location.get("stateAbbrev") or location.get("state"),
                 }
 
+        if self.league == "mlb":
+            # The panel uses this to reject generic nested TS records. Showing
+            # no value is preferable to displaying another game's venue,
+            # players or statistics under the selected matchup.
+            detail["event"]["mlb_live_verified"] = bool(mlb_live_data)
+
         # Keep the live sensor useful but bounded.
         detail["play_by_play"] = detail["play_by_play"][-160:]
         return detail
