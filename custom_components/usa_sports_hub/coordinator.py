@@ -177,6 +177,32 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
         await self.async_request_refresh()
 
     async def _async_update_data(self):
+        # When the user has a live game open, refresh only that game's rich
+        # detail feed. This keeps count, bases and current batter/pitcher moving
+        # without waiting on four complete league refreshes.
+        if self.selected_live_sport and self.selected_live_game_id:
+            sport = self.selected_live_sport
+            selected = next(
+                (
+                    game for game in self.cache.get(sport, {}).get("games", []) or []
+                    if str(game.get("game_id") or "") == str(self.selected_live_game_id)
+                ),
+                None,
+            )
+            if selected and selected.get("is_live"):
+                try:
+                    detail = await self.providers[sport].async_game_detail(self.selected_live_game_id)
+                    self.cache[sport] = {
+                        **self.cache[sport],
+                        "detail": detail,
+                        "error": None,
+                    }
+                except (ProviderError, ValueError, KeyError, TypeError) as err:
+                    _LOGGER.debug("%s live game detail refresh failed: %s", sport.upper(), err)
+                data = self._compose_data()
+                self.update_interval = timedelta(seconds=8)
+                return data
+
         await asyncio.gather(*(self._refresh_sport(sport) for sport in SPORTS))
         data = self._compose_data()
         self.update_interval = timedelta(seconds=20 if data["live_polling"] else 300)
