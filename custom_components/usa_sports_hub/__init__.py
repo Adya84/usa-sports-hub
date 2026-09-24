@@ -34,7 +34,7 @@ PANEL_SOUNDS_PATH = Path(__file__).parent / "frontend" / "sounds"
 
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     data = dict(entry.data)
-    data["provider_mode"] = "thescore"
+    data["provider_mode"] = "ts"
     hass.config_entries.async_update_entry(entry, data=data, version=3)
     return True
 
