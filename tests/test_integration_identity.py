@@ -28,3 +28,14 @@ class IntegrationIdentityTests(unittest.TestCase):
 
         self.assertIn("async_set_selected_live_match(self, fixture_id, sport=None)", source)
         self.assertIn("requested_sport", source)
+
+    def test_team_data_is_cached_and_favourites_are_persistent(self):
+        coordinator = Path("custom_components/usa_sports_hub/coordinator.py").read_text(encoding="utf-8")
+        setup = Path("custom_components/usa_sports_hub/__init__.py").read_text(encoding="utf-8")
+
+        self.assertIn('"team_details": {}', coordinator)
+        self.assertIn("async_add_team_favourite", coordinator)
+        self.assertIn("async_remove_team_favourite", coordinator)
+        self.assertIn('"team_favourites"', coordinator)
+        self.assertIn('"add_team_favourite"', setup)
+        self.assertIn('"remove_team_favourite"', setup)

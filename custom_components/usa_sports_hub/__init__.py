@@ -113,6 +113,25 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         async for coordinator in _coordinators(call):
             await coordinator.async_set_selected_live_match(fixture_id, sport=sport)
 
+    async def async_select_team(call: ServiceCall) -> None:
+        sport = str(call.data.get("sport") or "").strip().lower()
+        team_id = str(call.data.get("team_id") or "").strip()
+        async for coordinator in _coordinators(call):
+            await coordinator.async_select_team(sport, team_id)
+
+    async def async_add_team_favourite(call: ServiceCall) -> None:
+        sport = str(call.data.get("sport") or "").strip().lower()
+        team_id = str(call.data.get("team_id") or "").strip()
+        team = str(call.data.get("team") or "").strip()
+        async for coordinator in _coordinators(call):
+            await coordinator.async_add_team_favourite(sport, team_id, team)
+
+    async def async_remove_team_favourite(call: ServiceCall) -> None:
+        sport = str(call.data.get("sport") or "").strip().lower()
+        team_id = str(call.data.get("team_id") or "").strip()
+        async for coordinator in _coordinators(call):
+            await coordinator.async_remove_team_favourite(sport, team_id)
+
     async def async_select_competition(call: ServiceCall) -> None:
         competition = str(call.data.get("competition") or "").strip()
         async for coordinator in _coordinators(call):
@@ -153,6 +172,9 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     services = {
         "select_live_team": async_select_live_team,
         "select_live_match": async_select_live_match,
+        "select_team": async_select_team,
+        "add_team_favourite": async_add_team_favourite,
+        "remove_team_favourite": async_remove_team_favourite,
         "select_competition": async_select_competition,
         "select_cup": async_select_cup,
         "select_my_club": async_select_my_club,

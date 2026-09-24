@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.storage import Store
@@ -14,7 +14,7 @@ from .providers.ts import MlbProvider, NbaProvider, NflProvider, NhlProvider
 
 _LOGGER = logging.getLogger(__name__)
 SPORTS = ("nfl", "nba", "mlb", "nhl")
-CACHE_VERSION = 1
+CACHE_VERSION = 2
 CACHE_SAVE_DELAY_SECONDS = 15
 GAME_DETAIL_TIMEOUT_SECONDS = 8
 
@@ -27,6 +27,15 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
         self._store = Store(hass, CACHE_VERSION, f"{entry.entry_id}_sports_cache")
         self.selected_live_game_id = None
         self.selected_live_sport = None
+        stored_favourites = entry.options.get("team_favourites", [])
+        self.team_favourites = [
+            {"sport": str(item.get("sport") or "").lower(), "team_id": str(item.get("team_id") or ""), "team": str(item.get("team") or "")}
+            for item in stored_favourites
+            if isinstance(item, dict) and str(item.get("sport") or "").lower() in SPORTS and str(item.get("team_id") or "").strip()
+        ][:3]
+        self.selected_team_ids = {
+            item["sport"]: item["team_id"] for item in self.team_favourites
+        }
         session = async_get_clientsession(hass)
         self.providers = {
             "nfl": NflProvider(session),
@@ -43,6 +52,7 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
                 "ticker": [],
                 "detail": {},
                 "details": {},
+                "team_details": {},
                 "error": None,
             }
             for sport in SPORTS
@@ -94,6 +104,67 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
             details.pop(next(iter(details)))
         self.cache[sport] = {**self.cache[sport], "detail": detail, "details": details}
 
+    def _team_cache_key(self, sport: str, team_id: str) -> tuple[str, str]:
+        sport = str(sport or "").lower()
+        team_id = str(team_id or "").strip()
+        if sport not in SPORTS or not team_id:
+            raise ValueError("Supported sport and team ID are required")
+        return sport, team_id
+
+    def _store_team_detail(self, sport: str, team_id: str, detail: dict, error: str | None = None) -> None:
+        details = dict(self.cache[sport].get("team_details") or {})
+        previous = details.get(team_id) or {}
+        details[team_id] = {
+            **previous,
+            **(detail or {}),
+            "updated": datetime.now(timezone.utc).isoformat(),
+            "error": error,
+        }
+        while len(details) > 6:
+            details.pop(next(iter(details)))
+        self.cache[sport] = {**self.cache[sport], "team_details": details}
+
+    def _save_team_favourites(self) -> None:
+        self.hass.config_entries.async_update_entry(
+            self.entry,
+            options={**self.entry.options, "team_favourites": self.team_favourites},
+        )
+
+    async def async_select_team(self, sport: str, team_id: str) -> None:
+        sport, team_id = self._team_cache_key(sport, team_id)
+        self.selected_team_ids[sport] = team_id
+        self.async_set_updated_data(self._compose_data())
+        try:
+            detail = await self.providers[sport].async_team_detail(team_id)
+            self._store_team_detail(sport, team_id, detail)
+        except (ProviderError, ValueError, KeyError, TypeError) as err:
+            self._store_team_detail(sport, team_id, {}, str(err))
+        self._schedule_cache_save()
+        self.async_set_updated_data(self._compose_data())
+
+    async def async_add_team_favourite(self, sport: str, team_id: str, team: str) -> None:
+        sport, team_id = self._team_cache_key(sport, team_id)
+        record = {"sport": sport, "team_id": team_id, "team": str(team or "").strip() or "Team"}
+        if not any(item["sport"] == sport and item["team_id"] == team_id for item in self.team_favourites):
+            if len(self.team_favourites) >= 3:
+                raise ValueError("A maximum of three favourite teams is supported")
+            self.team_favourites.append(record)
+            self._save_team_favourites()
+        await self.async_select_team(sport, team_id)
+
+    async def async_remove_team_favourite(self, sport: str, team_id: str) -> None:
+        sport, team_id = self._team_cache_key(sport, team_id)
+        self.team_favourites = [item for item in self.team_favourites if (item["sport"], item["team_id"]) != (sport, team_id)]
+        self.cache[sport] = {
+            **self.cache[sport],
+            "team_details": {key: value for key, value in (self.cache[sport].get("team_details") or {}).items() if key != team_id},
+        }
+        if self.selected_team_ids.get(sport) == team_id:
+            self.selected_team_ids.pop(sport, None)
+        self._save_team_favourites()
+        self._schedule_cache_save()
+        self.async_set_updated_data(self._compose_data())
+
     async def _refresh_sport(self, sport):
         provider = self.providers[sport]
         try:
@@ -134,6 +205,7 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
                     )
 
             previous_details = self.cache[sport].get("details") or {}
+            previous_team_details = self.cache[sport].get("team_details") or {}
             self.cache[sport] = {
                 "games": games,
                 "standings": table,
@@ -142,6 +214,7 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
                 "ticker": ticker,
                 "detail": detail,
                 "details": previous_details,
+                "team_details": previous_team_details,
                 "error": None,
             }
             if detail and detail_target and detail_target.get("game_id"):
@@ -174,6 +247,8 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
                 or item.get("detail")
                 or {}
             )
+            selected_team_id = self.selected_team_ids.get(sport, "")
+            selected_team = (item.get("team_details") or {}).get(selected_team_id) or {}
             sports[sport] = {
                 **item,
                 "live": live,
@@ -197,6 +272,14 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
                 "related": detail.get("related") or [],
                 "odds": detail.get("odds") or {},
                 "stadium": detail.get("stadium") or {},
+                "team_profile": selected_team.get("profile") or {},
+                "team_squad": selected_team.get("squad") or [],
+                "team_statistics": selected_team.get("statistics") or [],
+                "team_leaders": selected_team.get("leaders") or [],
+                "team_injuries": selected_team.get("injuries") or [],
+                "team_selected_id": selected_team_id,
+                "team_error": selected_team.get("error"),
+                "team_updated": selected_team.get("updated"),
             }
         return {
             "sports": sports,

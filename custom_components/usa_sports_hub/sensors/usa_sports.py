@@ -31,6 +31,11 @@ SECTIONS = (
     "odds",
     "stadium",
     "ticker",
+    "team_profile",
+    "team_squad",
+    "team_statistics",
+    "team_leaders",
+    "team_injuries",
     "status",
 )
 LABELS = {"nfl": "NFL", "nba": "NBA", "mlb": "MLB", "nhl": "NHL"}
@@ -38,7 +43,8 @@ DETAIL_KEYS = {
     "live", "fixtures", "results", "standings", "teams", "players", "news",
     "game_detail", "box_score", "play_by_play", "drives", "scoring",
     "lineups", "injuries", "statistics", "leaders", "periods", "officials",
-    "situations", "related", "odds", "stadium", "ticker",
+    "situations", "related", "odds", "stadium", "ticker", "team_profile",
+    "team_squad", "team_statistics", "team_leaders", "team_injuries",
 }
 
 
