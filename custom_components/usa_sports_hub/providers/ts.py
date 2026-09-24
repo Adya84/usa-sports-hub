@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timedelta, timezone
+from email.utils import parsedate_to_datetime
 from typing import Any
 from urllib.parse import urlencode
 
@@ -242,7 +243,11 @@ class TSProvider(ProviderClient):
         if self.league == "mlb":
             mlb_game_pk = None
             try:
-                game_date = str(event.get("game_date") or "")[:10]
+                raw_game_date = str(event.get("game_date") or "")
+                # theScore uses RFC 2822 dates ("Wed, 23 Sep 2026 ..."), not
+                # ISO strings. Slicing the first ten characters produced
+                # "Wed, 23 S", preventing every official MLB schedule match.
+                game_date = parsedate_to_datetime(raw_game_date).date().isoformat()
                 home_name = str((event.get("home_team") or {}).get("full_name") or (event.get("home_team") or {}).get("name") or "").lower()
                 away_name = str((event.get("away_team") or {}).get("full_name") or (event.get("away_team") or {}).get("name") or "").lower()
                 schedule = await self.async_get_json(
