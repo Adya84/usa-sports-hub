@@ -100,31 +100,10 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
             self.cache[sport] = {**self.cache[sport], "error": str(err)}
             _LOGGER.warning("%s TS refresh failed: %s", sport.upper(), err)
 
-    async def async_set_selected_live_match(self, fixture_id):
-        """Select a live game from the panel and refresh its detailed feed."""
-        game_id = str(fixture_id or "").strip()
-        if not game_id:
-            self.selected_live_game_id = None
-            self.selected_live_sport = None
-            await self.async_request_refresh()
-            return
-
-        for sport, item in self.cache.items():
-            for game in item.get("games", []) or []:
-                if str(game.get("game_id") or "") == game_id:
-                    self.selected_live_game_id = game_id
-                    self.selected_live_sport = sport
-                    await self.async_request_refresh()
-                    return
-
-        self.selected_live_game_id = game_id
-        await self.async_request_refresh()
-
-    async def _async_update_data(self):
-        await asyncio.gather(*(self._refresh_sport(sport) for sport in SPORTS))
+    def _compose_data(self):
+        """Build coordinator output from the current cache without network I/O."""
         sports = {}
         live_any = False
-
         for sport, item in self.cache.items():
             games = item["games"]
             live = [game for game in games if game.get("is_live")]
@@ -135,7 +114,6 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
             finished = [game for game in games if game.get("is_final")]
             live_any |= bool(live)
             detail = item.get("detail") or {}
-
             sports[sport] = {
                 **item,
                 "live": live,
@@ -160,10 +138,46 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
                 "odds": detail.get("odds") or {},
                 "stadium": detail.get("stadium") or {},
             }
-
-        self.update_interval = timedelta(seconds=20 if live_any else 300)
         return {
             "sports": sports,
             "live_polling": live_any,
             "provider": "TS",
         }
+
+    async def async_set_selected_live_match(self, fixture_id):
+        """Select a game and load only that game's detail feed."""
+        game_id = str(fixture_id or "").strip()
+        if not game_id:
+            self.selected_live_game_id = None
+            self.selected_live_sport = None
+            return
+
+        matched_sport = None
+        for sport, item in self.cache.items():
+            if any(str(game.get("game_id") or "") == game_id for game in item.get("games", []) or []):
+                matched_sport = sport
+                break
+
+        self.selected_live_game_id = game_id
+        self.selected_live_sport = matched_sport
+        if matched_sport:
+            try:
+                detail = await self.providers[matched_sport].async_game_detail(game_id)
+                self.cache[matched_sport] = {
+                    **self.cache[matched_sport],
+                    "detail": detail,
+                    "error": None,
+                }
+                self.async_set_updated_data(self._compose_data())
+                return
+            except (ProviderError, ValueError, KeyError, TypeError) as err:
+                _LOGGER.warning("%s selected game detail failed: %s", matched_sport.upper(), err)
+
+        # Fallback only when the selected game cannot be found in the cache.
+        await self.async_request_refresh()
+
+    async def _async_update_data(self):
+        await asyncio.gather(*(self._refresh_sport(sport) for sport in SPORTS))
+        data = self._compose_data()
+        self.update_interval = timedelta(seconds=20 if data["live_polling"] else 300)
+        return data
