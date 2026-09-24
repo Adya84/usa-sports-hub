@@ -401,4 +401,15 @@ class UsaSportsHubPanel extends HTMLElement {
   }
   donation(s){return `<section class="donation"><span class="donation-icon">${s.icon}</span><div><small>SUPPORT ${s.label}</small><h3>Keep USA Sports Hub in play</h3><p>Help support new ${s.label} data, features, and live game coverage.</p></div><div class="actions"><a href="https://ko-fi.com/ady1984" target="_blank" rel="noopener noreferrer">Support via Ko-fi</a><a href="https://paypal.me/graffidoodle" target="_blank" rel="noopener noreferrer">PayPal</a></div></section>`}
 }
+/* Live card override: place game state and score ahead of secondary metadata. */
+UsaSportsHubPanel.prototype.liveGameCard=function(game){
+  const isLive=Boolean(game?.is_live), selected=String(game?.game_id||'')===String(this.selectedLiveGame||'');
+  const label=isLive?'LIVE UPDATE':(game?.is_final?'FINAL':game?.status_detail||'SCHEDULED');
+  const timing=[game?.period_label,game?.clock].filter(Boolean).join(' · ')||game?.status_detail||'Awaiting update';
+  return '<button class="live-game-card '+(isLive?'active-live ':'')+(selected?'selected-live':'')+'" data-live-game="'+esc(game?.game_id||'')+'" style="position:relative;overflow:hidden;'+(selected?'box-shadow:0 0 0 2px #35d5ff,0 0 28px #35d5ff55;':'')+'">'+
+    '<div class="live-card-top" style="background:'+(isLive?'linear-gradient(90deg,#5c0d22,#250917)':'#06213d')+'"><span style="font-weight:950;letter-spacing:.08em">'+(isLive?'<i></i> ':'')+label+'</span><small style="font-weight:800">'+esc(timing)+'</small></div>'+
+    '<div class="live-team-row"><span>'+this.gameLogo(game?.away_logo,game?.away_team)+'</span><b>'+esc(game?.away_team||'Away')+'</b><strong style="font-size:1.75rem">'+esc(game?.away_score??'–')+'</strong></div>'+
+    '<div class="live-team-row"><span>'+this.gameLogo(game?.home_logo,game?.home_team)+'</span><b>'+esc(game?.home_team||'Home')+'</b><strong style="font-size:1.75rem">'+esc(game?.home_score??'–')+'</strong></div>'+
+    '<div class="live-card-foot"><span>'+esc(game?.venue||game?.status_detail||'')+'</span><b>'+ (selected?'NOW PLAYING':'OPEN GAME ›') +'</b></div></button>';
+};
 customElements.define('usa-sports-hub-panel',UsaSportsHubPanel);
