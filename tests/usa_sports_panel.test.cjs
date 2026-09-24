@@ -42,3 +42,19 @@ test('My Team uses dedicated team sensors and saved favourite controls', () => {
     assert.match(source, new RegExp(value));
   }
 });
+
+
+test('MLB has dedicated polished pages for every league tab', () => {
+  const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
+  for (const value of ['mlbOverviewPage','mlbDataPage','MLB Schedule','MLB Results','MLB Standings','MLB Teams','MLB Players','MLB Statistics','MLB News & Game Stories','My MLB Team','TEAM LEADERS','INJURY REPORT','data-mlb-team-id']) {
+    assert.ok(source.includes(value), value + ' should exist in the MLB page implementation');
+  }
+});
+
+test('MLB team pages keep favourite controls and game-centre navigation', () => {
+  const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
+  assert.match(source, /data-add-favourite/);
+  assert.match(source, /data-remove-favourite/);
+  assert.match(source, /data-live-game/);
+  assert.match(source, /select_team/);
+});
