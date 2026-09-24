@@ -50,6 +50,44 @@ def _objects_with_keys(value: Any, keys: set[str], limit: int = 100) -> list[dic
     return rows
 
 
+def _named_lists(value: Any, names: set[str], limit: int = 120) -> list[dict[str, Any]]:
+    """Collect dict rows from commonly named provider list fields."""
+    rows: list[dict[str, Any]] = []
+    for node in _walk(value):
+        if not isinstance(node, dict):
+            continue
+        for key, child in node.items():
+            if str(key).lower() not in names or not isinstance(child, list):
+                continue
+            for item in child:
+                if isinstance(item, dict):
+                    rows.append(item)
+                    if len(rows) >= limit:
+                        return rows
+    return rows
+
+
+def _dedupe_dicts(rows: list[dict[str, Any]], limit: int = 120) -> list[dict[str, Any]]:
+    """Best-effort de-duplicate nested provider rows while preserving order."""
+    seen: set[str] = set()
+    result: list[dict[str, Any]] = []
+    for row in rows:
+        marker = str(
+            row.get("id")
+            or row.get("api_uri")
+            or row.get("player_id")
+            or row.get("team_id")
+            or row
+        )
+        if marker in seen:
+            continue
+        seen.add(marker)
+        result.append(row)
+        if len(result) >= limit:
+            break
+    return result
+
+
 class TSProvider(ProviderClient):
     """One provider implementation shared by all supported leagues."""
 
@@ -155,6 +193,11 @@ class TSProvider(ProviderClient):
             "injuries": [],
             "lineups": [],
             "statistics": [],
+            "leaders": [],
+            "periods": [],
+            "officials": [],
+            "situations": [],
+            "related": [],
             "odds": event.get("odd") or {},
             "stadium": event.get("stadium_details") or {},
         }
@@ -180,32 +223,151 @@ class TSProvider(ProviderClient):
                         item for item in records if isinstance(item, dict)
                     )
 
-        # Pull useful compact collections from the event + box-score tree.
-        combined = {"event": event, "box_score": box_score, "drives": detail["drives"]}
-        detail["scoring"] = _objects_with_keys(
-            combined, {"score_summary", "scoring_play", "scoring_type", "goal_type"}, 80
+        # Follow additional game-detail endpoints advertised by the event/box score.
+        # Different sports expose lineups, injuries, rosters, player stats and
+        # officials through different nested api_uri fields, so discover them
+        # dynamically rather than hard-coding one league's shape.
+        related_source = {"event": event, "box_score": box_score}
+        related_uris = _api_uris(related_source, f"/{self.league}/")
+        allowed_fragments = (
+            "lineup", "injur", "roster", "player", "stat", "leader",
+            "official", "pitcher", "batter", "skater", "goalie",
         )
-        detail["players"] = _objects_with_keys(
-            combined, {"full_name", "first_initial_and_last_name", "position_abbreviation"}, 100
+        related_payloads: list[Any] = []
+        for uri in [
+            uri for uri in related_uris
+            if any(fragment in uri.lower() for fragment in allowed_fragments)
+        ][:20]:
+            try:
+                payload = await self.async_get_json(f"{API_BASE}{uri}")
+            except Exception:
+                continue
+            related_payloads.append(payload)
+
+        detail["related"] = related_payloads[:20]
+
+        # Pull useful compact collections from the complete event/detail tree.
+        combined = {
+            "event": event,
+            "box_score": box_score,
+            "drives": detail["drives"],
+            "related": related_payloads,
+        }
+        detail["scoring"] = _dedupe_dicts(
+            _objects_with_keys(
+                combined,
+                {"score_summary", "scoring_play", "scoring_type", "goal_type", "touchdown"},
+                120,
+            )
+            + _named_lists(combined, {"scoring", "scoring_plays", "goals", "runs"}, 120),
+            120,
         )
-        detail["injuries"] = _objects_with_keys(
-            combined, {"date_injured", "return_date", "injury"}, 60
+        detail["players"] = _dedupe_dicts(
+            _objects_with_keys(
+                combined,
+                {
+                    "full_name", "first_initial_and_last_name", "position_abbreviation",
+                    "jersey_number", "player_id",
+                },
+                160,
+            )
+            + _named_lists(combined, {"players", "roster", "rosters", "skaters", "goalies"}, 160),
+            160,
         )
-        detail["lineups"] = _objects_with_keys(
-            combined, {"lineup", "batting_order", "starter"}, 80
+        detail["injuries"] = _dedupe_dicts(
+            _objects_with_keys(
+                combined,
+                {"date_injured", "return_date", "injury", "injury_status", "injury_type"},
+                100,
+            )
+            + _named_lists(combined, {"injuries", "injured_players"}, 100),
+            100,
         )
-        detail["statistics"] = _objects_with_keys(
-            combined,
-            {
-                "passing_yards", "rushing_yards", "receiving_yards",
-                "points", "rebounds", "assists", "shots", "hits",
-                "runs", "earned_runs", "strikeouts", "saves",
-            },
+        detail["lineups"] = _dedupe_dicts(
+            _objects_with_keys(
+                combined,
+                {"lineup", "batting_order", "starter", "starting_position", "depth_position"},
+                140,
+            )
+            + _named_lists(
+                combined,
+                {
+                    "lineup", "lineups", "starters", "starting_lineup",
+                    "batting_order", "formations",
+                },
+                140,
+            ),
+            140,
+        )
+        detail["statistics"] = _dedupe_dicts(
+            _objects_with_keys(
+                combined,
+                {
+                    "passing_yards", "rushing_yards", "receiving_yards",
+                    "points", "rebounds", "assists", "shots", "hits",
+                    "runs", "earned_runs", "strikeouts", "saves",
+                    "field_goals_made", "three_points_made", "goals",
+                    "tackles", "interceptions", "home_runs",
+                },
+                180,
+            )
+            + _named_lists(
+                combined,
+                {
+                    "statistics", "stats", "team_statistics", "player_statistics",
+                    "player_stats", "team_stats",
+                },
+                180,
+            ),
+            180,
+        )
+        detail["leaders"] = _dedupe_dicts(
+            _objects_with_keys(
+                combined,
+                {"leader", "leaders", "rank", "stat_value", "display_value"},
+                100,
+            )
+            + _named_lists(combined, {"leaders", "game_leaders", "player_leaders"}, 100),
+            100,
+        )
+        detail["periods"] = _dedupe_dicts(
+            _objects_with_keys(
+                combined,
+                {"period", "segment", "segment_string", "quarter", "inning"},
+                100,
+            )
+            + _named_lists(
+                combined,
+                {"periods", "segments", "quarters", "innings", "line_scores", "linescores"},
+                100,
+            ),
+            100,
+        )
+        detail["officials"] = _dedupe_dicts(
+            _objects_with_keys(
+                combined,
+                {"official", "official_type", "referee", "umpire"},
+                60,
+            )
+            + _named_lists(combined, {"officials", "referees", "umpires"}, 60),
+            60,
+        )
+        detail["situations"] = _dedupe_dicts(
+            _objects_with_keys(
+                combined,
+                {
+                    "down", "distance", "possession", "yard_line",
+                    "balls", "strikes", "outs", "first_base", "second_base", "third_base",
+                    "team_on_power_play", "home_strength", "away_strength",
+                    "pitcher", "batter",
+                },
+                100,
+            ),
             100,
         )
 
         # Keep the live sensor useful but bounded.
-        detail["play_by_play"] = detail["play_by_play"][-120:]
+        detail["play_by_play"] = detail["play_by_play"][-160:]
         return detail
 
 
