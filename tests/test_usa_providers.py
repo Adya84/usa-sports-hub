@@ -47,6 +47,12 @@ class ProviderModelTests(unittest.TestCase):
         self.assertEqual(detail["squad"][0]["season_stats"]["home_runs"], 20)
         self.assertEqual(detail["injuries"], [])
 
+    def test_provider_has_dedicated_team_data_endpoints(self):
+        source = Path("custom_components/usa_sports_hub/providers/ts.py").read_text(encoding="utf-8")
+        self.assertIn("async def async_team_detail", source)
+        for suffix in ("/players", "/statistics", "/leaders", "/injuries"):
+            self.assertIn(f'{{self.base}}/teams/{{team_id}}{suffix}', source)
+
     def test_mlb_detail_does_not_make_unscoped_fallback_requests(self):
         source = Path("custom_components/usa_sports_hub/providers/ts.py").read_text(encoding="utf-8")
 

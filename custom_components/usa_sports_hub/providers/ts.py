@@ -12,6 +12,7 @@ from .models import (
     compact_ts_news,
     normalize_ts_event,
     normalize_ts_standing,
+    normalize_ts_team_detail,
     normalize_ts_team,
 )
 
@@ -176,6 +177,28 @@ class TSProvider(ProviderClient):
                         normalized = normalize_ts_team(team)
                         teams[str(normalized["id"])] = normalized
         return list(teams.values())
+
+    async def async_team_detail(self, team_id: str | int) -> dict[str, Any]:
+        """Fetch compact, team-scoped data without using selected game details."""
+        team_id = str(team_id).strip()
+        if not team_id:
+            raise ValueError("Team ID is required")
+        endpoints = (
+            f"{self.base}/teams/{team_id}",
+            f"{self.base}/teams/{team_id}/players",
+            f"{self.base}/teams/{team_id}/statistics",
+            f"{self.base}/teams/{team_id}/leaders",
+            f"{self.base}/teams/{team_id}/injuries",
+        )
+        responses = await asyncio.gather(
+            *(self.async_get_json(url) for url in endpoints),
+            return_exceptions=True,
+        )
+        profile = responses[0]
+        if not isinstance(profile, dict):
+            raise ProviderError(f"Unable to load {self.league.upper()} team {team_id}")
+        optional = [value if isinstance(value, list) else [] for value in responses[1:]]
+        return normalize_ts_team_detail(self.league, profile, *optional)
 
     async def async_game_detail(self, game_id: str | int) -> dict[str, Any]:
         event = await self.async_get_json(f"{self.base}/events/{game_id}")

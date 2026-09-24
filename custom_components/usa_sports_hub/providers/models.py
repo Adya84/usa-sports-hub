@@ -34,6 +34,23 @@ def normalize_ts_team(team: dict[str, Any]) -> dict[str, Any]:
         "Toronto", "Vancouver", "Montreal", "Montréal", "Ottawa",
         "Calgary", "Edmonton", "Winnipeg",
     }
+    return {
+        "id": str(team.get("id") or ""),
+        "name": team.get("full_name") or team.get("name") or "Team",
+        "short_name": team.get("short_name") or team.get("abbreviation") or "",
+        "abbreviation": team.get("abbreviation") or team.get("short_name") or "",
+        "location": location,
+        "conference": team.get("conference"),
+        "division": team.get("division"),
+        "colour_1": team.get("colour_1"),
+        "colour_2": team.get("colour_2"),
+        "logo": _logo(team),
+        "has_injuries": bool(team.get("has_injuries")),
+        "has_rosters": bool(team.get("has_rosters")),
+        "has_extra_info": bool(team.get("has_extra_info")),
+        "country": "canada" if location in canada else "usa",
+        "api_uri": team.get("api_uri"),
+    }
 
 
 def _team_collection(value: Any) -> list[dict[str, Any]]:
@@ -96,25 +113,6 @@ def normalize_ts_team_detail(
         "injuries": _team_collection(injuries),
         "league": league.upper(),
     }
-    return {
-        "id": str(team.get("id") or ""),
-        "name": team.get("full_name") or team.get("name") or "Team",
-        "short_name": team.get("short_name") or team.get("abbreviation") or "",
-        "abbreviation": team.get("abbreviation") or team.get("short_name") or "",
-        "location": location,
-        "conference": team.get("conference"),
-        "division": team.get("division"),
-        "colour_1": team.get("colour_1"),
-        "colour_2": team.get("colour_2"),
-        "logo": _logo(team),
-        "has_injuries": bool(team.get("has_injuries")),
-        "has_rosters": bool(team.get("has_rosters")),
-        "has_extra_info": bool(team.get("has_extra_info")),
-        "country": "canada" if location in canada else "usa",
-        "api_uri": team.get("api_uri"),
-    }
-
-
 def normalize_ts_event(event: dict[str, Any], league: str) -> dict[str, Any]:
     home = event.get("home_team") if isinstance(event.get("home_team"), dict) else {}
     away = event.get("away_team") if isinstance(event.get("away_team"), dict) else {}
