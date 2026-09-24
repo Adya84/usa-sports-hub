@@ -22,7 +22,7 @@ class UsaSportsHubPanel extends HTMLElement {
     const fixtures=items('fixtures'),results=items('results'),live=items('live'),standings=items('standings'),teams=entity?.attributes?.teams||[],players=items('players'),stats=items('statistics'),news=items('news'),scoring=items('scoring'),drives=items('drives'),lineups=items('lineups'),injuries=items('injuries');
     if(tab==='Fixtures'||tab==='Results'){
       const games=tab==='Fixtures'?fixtures:results;
-      return \`<section class="page data-page"><p>USA SPORTS HUB · \${s.label}</p><h2>\${tab}</h2><span>\${tab==='Fixtures'?'Upcoming schedule with local start times and game status.':'Completed games and final scores.'}</span><div class="schedule-grid">\${games.length?games.slice(0,60).map(g=>this.liveGameCard(g)).join(''):'<div class="empty-live large">No '+tab.toLowerCase()+' available.</div>'}</div></section>\`;
+      return `<section class="page data-page"><p>USA SPORTS HUB · ${s.label}</p><h2>${tab}</h2><span>${tab==='Fixtures'?'Upcoming schedule with local start times and game status.':'Completed games and final scores.'}</span><div class="schedule-grid">${games.length?games.slice(0,60).map(g=>this.liveGameCard(g)).join(''):'<div class="empty-live large">No '+tab.toLowerCase()+' available.</div>'}</div></section>`;
     }
     if(tab==='Standings'){
       const head=this.sport==='mlb'?'<span>GB</span><span>DIFF</span>':this.sport==='nhl'?'<span>PTS</span><span>DIFF</span>':'<span>REC</span><span>SEED</span>';
@@ -31,31 +31,31 @@ class UsaSportsHubPanel extends HTMLElement {
         const b=this.sport==='mlb'?(x.runs_differential??'–'):this.sport==='nhl'?(x.goal_differential??'–'):(x.playoff_seed??'–');
         return '<div class="standings-row"><strong>'+esc(x.rank||x.division_rank||i+1)+'</strong>'+this.gameLogo(x.logo,x.team)+'<div><b>'+esc(x.team||'Team')+'</b><small>'+esc([x.division,x.streak].filter(Boolean).join(' · '))+'</small></div><span>'+esc(a)+'</span><span>'+esc(b)+'</span></div>';
       }).join('');
-      return \`<section class="page data-page"><p>USA SPORTS HUB · \${s.label}</p><h2>Standings</h2><span>Full league standings from the active season.</span><div class="standings-table"><div class="standings-head"><span>#</span><span></span><span>TEAM</span>\${head}</div>\${rows||'<div class="empty-live large">No standings available.</div>'}</div></section>\`;
+      return `<section class="page data-page"><p>USA SPORTS HUB · ${s.label}</p><h2>Standings</h2><span>Full league standings from the active season.</span><div class="standings-table"><div class="standings-head"><span>#</span><span></span><span>TEAM</span>${head}</div>${rows||'<div class="empty-live large">No standings available.</div>'}</div></section>`;
     }
     if(tab==='Teams'){
       const rows=teams.map(x=>'<article class="team-card">'+this.gameLogo(x.logo,x.name)+'<div><h3>'+esc(x.name||'Team')+'</h3><p>'+esc([x.abbreviation,x.conference,x.division].filter(Boolean).join(' · '))+'</p></div><span>'+esc((x.country||'').toUpperCase())+'</span></article>').join('');
-      return \`<section class="page data-page"><p>USA SPORTS HUB · \${s.label}</p><h2>Teams</h2><span>\${teams.length} teams available.</span><div class="teams-grid">\${rows||'<div class="empty-live large">No team data available.</div>'}</div></section>\`;
+      return `<section class="page data-page"><p>USA SPORTS HUB · ${s.label}</p><h2>Teams</h2><span>${teams.length} teams available.</span><div class="teams-grid">${rows||'<div class="empty-live large">No team data available.</div>'}</div></section>`;
     }
     if(tab==='Players'){
       const rows=players.slice(0,100).map(x=>'<article class="player-card">'+this.gameLogo(x.headshot||x.image,x.full_name||x.name)+'<div><h3>'+esc(x.full_name||x.name||x.first_initial_and_last_name||'Player')+'</h3><p>'+esc([x.position_abbreviation,x.jersey_number,x.team_name].filter(Boolean).join(' · '))+'</p></div></article>').join('');
-      return \`<section class="page data-page"><p>USA SPORTS HUB · \${s.label}</p><h2>Players</h2><span>Player records currently loaded from the selected game feed.</span><div class="players-grid">\${rows||'<div class="empty-live large">Player data will appear when game details are available.</div>'}</div></section>\`;
+      return `<section class="page data-page"><p>USA SPORTS HUB · ${s.label}</p><h2>Players</h2><span>Player records currently loaded from the selected game feed.</span><div class="players-grid">${rows||'<div class="empty-live large">Player data will appear when game details are available.</div>'}</div></section>`;
     }
     if(tab==='Stats'){
       const box=sensor('box_score')?.attributes?.box_score||{};
       const statRows=stats.slice(0,100).map(x=>'<div class="stat-data-row"><b>'+esc(x.full_name||x.name||x.team_name||x.stat_name||x.label||'Statistic')+'</b><span>'+esc(x.value??x.total??x.points??x.passing_yards??x.rushing_yards??x.receiving_yards??x.rebounds??x.assists??x.shots??x.hits??x.runs??x.strikeouts??x.saves??'')+'</span></div>').join('');
       const metricCards='<article><small>STAT RECORDS</small><b>'+stats.length+'</b></article><article><small>SCORING EVENTS</small><b>'+scoring.length+'</b></article><article><small>LINEUPS</small><b>'+lineups.length+'</b></article><article><small>INJURIES</small><b>'+injuries.length+'</b></article>'+(this.sport==='nfl'?'<article><small>DRIVES</small><b>'+drives.length+'</b></article>':'');
-      return \`<section class="page data-page"><p>USA SPORTS HUB · \${s.label}</p><h2>Statistics</h2><span>Detailed data for the game currently loaded by the live centre.</span><div class="stat-summary">\${metricCards}</div><div class="stats-panel"><div>\${statRows||'<div class="empty-live">No detailed statistics loaded.</div>'}</div><pre>\${esc(JSON.stringify(box,null,2)).slice(0,8000)}</pre></div></section>\`;
+      return `<section class="page data-page"><p>USA SPORTS HUB · ${s.label}</p><h2>Statistics</h2><span>Detailed data for the game currently loaded by the live centre.</span><div class="stat-summary">${metricCards}</div><div class="stats-panel"><div>${statRows||'<div class="empty-live">No detailed statistics loaded.</div>'}</div><pre>${esc(JSON.stringify(box,null,2)).slice(0,8000)}</pre></div></section>`;
     }
     if(tab==='News'){
       const cards=news.map(x=>'<article class="news-card"><small>'+esc(x.kind||'UPDATE')+'</small><h3>'+esc(x.title||'News')+'</h3><p>'+esc(x.summary||'')+'</p>'+(x.url?'<a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer">Read more ↗</a>':'')+'</article>').join('');
-      return \`<section class="page data-page"><p>USA SPORTS HUB · \${s.label}</p><h2>News & Game Reports</h2><span>Previews and recaps linked to current \${s.label} games.</span><div class="news-grid">\${cards||'<div class="empty-live large">No current news or reports available.</div>'}</div></section>\`;
+      return `<section class="page data-page"><p>USA SPORTS HUB · ${s.label}</p><h2>News & Game Reports</h2><span>Previews and recaps linked to current ${s.label} games.</span><div class="news-grid">${cards||'<div class="empty-live large">No current news or reports available.</div>'}</div></section>`;
     }
     if(tab==='My Team'){
       const name=this.team;
       const all=[...live,...fixtures,...results].filter(g=>!name||g.home_team===name||g.away_team===name);
       const teamInfo=teams.find(x=>x.name===name);
-      return \`<section class="page data-page"><p>USA SPORTS HUB · \${s.label}</p><h2>My Team</h2>\${name?\`<div class="my-team-head">\${this.gameLogo(teamInfo?.logo,name)}<div><h3>\${esc(name)}</h3><span>\${esc([teamInfo?.conference,teamInfo?.division].filter(Boolean).join(' · '))}</span></div></div><div class="schedule-grid">\${all.slice(0,20).map(g=>this.liveGameCard(g)).join('')||'<div class="empty-live large">No games loaded for this team.</div>'}</div>\`:'<div class="empty-live large">Choose a team from the selector at the top of the dashboard.</div>'}</section>\`;
+      return `<section class="page data-page"><p>USA SPORTS HUB · ${s.label}</p><h2>My Team</h2>${name?`<div class="my-team-head">${this.gameLogo(teamInfo?.logo,name)}<div><h3>${esc(name)}</h3><span>${esc([teamInfo?.conference,teamInfo?.division].filter(Boolean).join(' · '))}</span></div></div><div class="schedule-grid">${all.slice(0,20).map(g=>this.liveGameCard(g)).join('')||'<div class="empty-live large">No games loaded for this team.</div>'}</div>`:'<div class="empty-live large">Choose a team from the selector at the top of the dashboard.</div>'}</section>`;
     }
     return '<section class="page"><h2>'+esc(tab)+'</h2><div class="empty-live large">No data available.</div></section>';
   }
