@@ -41,6 +41,7 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
                 "teams": [],
                 "ticker": [],
                 "detail": {},
+                "details": {},
                 "error": None,
             }
             for sport in SPORTS
@@ -83,6 +84,15 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
             lambda: {"sports": self.cache}, CACHE_SAVE_DELAY_SECONDS
         )
 
+    def _store_game_detail(self, sport: str, game_id: str, detail: dict) -> None:
+        """Keep a bounded, per-game snapshot without sharing one game's data."""
+        details = dict(self.cache[sport].get("details") or {})
+        details[str(game_id)] = detail
+        # Retain recent opened games, while keeping Home Assistant state/cache small.
+        while len(details) > 12:
+            details.pop(next(iter(details)))
+        self.cache[sport] = {**self.cache[sport], "detail": detail, "details": details}
+
     async def _refresh_sport(self, sport):
         provider = self.providers[sport]
         try:
@@ -122,6 +132,7 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
                         "%s detailed game refresh failed: %s", sport.upper(), err
                     )
 
+            previous_details = self.cache[sport].get("details") or {}
             self.cache[sport] = {
                 "games": games,
                 "standings": table,
@@ -129,8 +140,11 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
                 "teams": teams,
                 "ticker": ticker,
                 "detail": detail,
+                "details": previous_details,
                 "error": None,
             }
+            if detail and detail_target and detail_target.get("game_id"):
+                self._store_game_detail(sport, str(detail_target["game_id"]), detail)
             self._schedule_cache_save()
         except (ProviderError, ValueError, KeyError, TypeError) as err:
             self.cache[sport] = {**self.cache[sport], "error": str(err)}
@@ -149,7 +163,16 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
             ]
             finished = [game for game in games if game.get("is_final")]
             live_any |= bool(live)
-            detail = item.get("detail") or {}
+            selected_detail_id = (
+                str(self.selected_live_game_id)
+                if self.selected_live_sport == sport and self.selected_live_game_id
+                else ""
+            )
+            detail = (
+                (item.get("details") or {}).get(selected_detail_id)
+                or item.get("detail")
+                or {}
+            )
             sports[sport] = {
                 **item,
                 "live": live,
@@ -197,22 +220,19 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
         self.selected_live_game_id = game_id
         self.selected_live_sport = matched_sport
         if matched_sport:
-            # Clear the previous selection before awaiting the new request.
-            # This prevents one game's lineups, venue and live state appearing
-            # briefly beneath a newly clicked matchup.
+            # Render this game's own stored snapshot when it exists. Otherwise
+            # clear detail while it loads; never show another fixture's data.
+            cached_detail = (self.cache[matched_sport].get("details") or {}).get(game_id) or {}
             self.cache[matched_sport] = {
                 **self.cache[matched_sport],
-                "detail": {},
+                "detail": cached_detail,
                 "error": None,
             }
             self.async_set_updated_data(self._compose_data())
             try:
                 detail = await self.providers[matched_sport].async_game_detail(game_id)
-                self.cache[matched_sport] = {
-                    **self.cache[matched_sport],
-                    "detail": detail,
-                    "error": None,
-                }
+                self._store_game_detail(matched_sport, game_id, detail)
+                self.cache[matched_sport] = {**self.cache[matched_sport], "error": None}
                 self._schedule_cache_save()
                 self.async_set_updated_data(self._compose_data())
                 return
@@ -238,11 +258,8 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
             if selected and selected.get("is_live"):
                 try:
                     detail = await self.providers[sport].async_game_detail(self.selected_live_game_id)
-                    self.cache[sport] = {
-                        **self.cache[sport],
-                        "detail": detail,
-                        "error": None,
-                    }
+                    self._store_game_detail(sport, str(self.selected_live_game_id), detail)
+                    self.cache[sport] = {**self.cache[sport], "error": None}
                     self._schedule_cache_save()
                 except (ProviderError, ValueError, KeyError, TypeError) as err:
                     _LOGGER.debug("%s live game detail refresh failed: %s", sport.upper(), err)

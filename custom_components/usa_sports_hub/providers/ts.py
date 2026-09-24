@@ -318,7 +318,7 @@ class TSProvider(ProviderClient):
                         mlb_live_data = candidate_live
                         mlb_game_data = candidate_game
 
-                if not detail["play_by_play"] and mlb_live_data:
+                if mlb_live_data:
                     plays_root = mlb_live_data.get("plays") if isinstance(mlb_live_data.get("plays"), dict) else {}
                     all_plays = plays_root.get("allPlays")
                     if not isinstance(all_plays, list):
@@ -358,7 +358,10 @@ class TSProvider(ProviderClient):
                                     "pitcher": pitcher.get("fullName"),
                                 }
                             )
-                        detail["play_by_play"].extend(converted)
+                        # TheScore's nested records can belong to a different
+                        # event. The official feed above was matched to both
+                        # teams, so it must replace—not supplement—them.
+                        detail["play_by_play"] = converted
 
         # Follow additional game-detail endpoints advertised by the event/box score.
         # Different sports expose lineups, injuries, rosters, player stats and
@@ -855,6 +858,16 @@ class TSProvider(ProviderClient):
                     "city": location.get("city"),
                     "state": location.get("stateAbbrev") or location.get("state"),
                 }
+
+        if self.league == "mlb" and not mlb_live_data:
+            # Do not publish recursively discovered MLB box-score records.
+            # They are not reliably scoped to this event and were the source
+            # of prior-game players, venues and plays appearing after a click.
+            for key in (
+                "play_by_play", "scoring", "players", "lineups",
+                "statistics", "leaders", "periods", "officials", "situations",
+            ):
+                detail[key] = []
 
         if self.league == "mlb":
             # The panel uses this to reject generic nested TS records. Showing
