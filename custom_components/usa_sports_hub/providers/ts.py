@@ -374,10 +374,11 @@ class TSProvider(ProviderClient):
             "official", "pitcher", "batter", "skater", "goalie",
         )
         related_payloads: list[Any] = []
-        # MLB's rich live feed already includes players, lineups, stats and
-        # officials, so avoid extra TS detail calls. For other sports, fetch
-        # advertised detail endpoints concurrently rather than one-by-one.
-        selected_related_uris = [] if (self.league == "mlb" and mlb_live_data) else [
+        # MLB never uses unscoped TheScore detail endpoints: the official feed
+        # is the sole rich source. If it is briefly unavailable, those requests
+        # add tens of seconds yet must be discarded to avoid cross-game data.
+        # Other sports fetch advertised endpoints concurrently.
+        selected_related_uris = [] if self.league == "mlb" else [
             uri for uri in related_uris
             if any(fragment in uri.lower() for fragment in allowed_fragments)
         ][:20]

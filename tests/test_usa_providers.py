@@ -17,6 +17,11 @@ compact_news = models.compact_ts_news
 
 
 class ProviderModelTests(unittest.TestCase):
+    def test_mlb_detail_does_not_make_unscoped_fallback_requests(self):
+        source = Path("custom_components/usa_sports_hub/providers/ts.py").read_text(encoding="utf-8")
+
+        self.assertIn('selected_related_uris = [] if self.league == "mlb" else [', source)
+
     def test_ts_event_keeps_live_detail(self):
         event = {
             "id": 123,
