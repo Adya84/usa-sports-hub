@@ -35,7 +35,7 @@ class UsaSportsHubPanel extends HTMLElement {
   }
   scalarPairs(x){
     if(!x||typeof x!=='object')return [];
-    const skip=new Set(['id','api_uri','created_at','updated_at','logos','images','headshot','image','colour_1','colour_2']);
+    const skip=new Set(['id','api_uri','url','href','link','source_url','source','website','web_url','created_at','updated_at','logos','images','headshot','image','colour_1','colour_2']);
     return Object.entries(x).filter(([key,value])=>!skip.has(key)&&value!==null&&value!==undefined&&value!==''&&typeof value!=='object');
   }
   itemTitle(x){
@@ -71,7 +71,7 @@ class UsaSportsHubPanel extends HTMLElement {
   }
   infoGrid(obj,limit){
     if(!obj||typeof obj!=='object')return '';
-    return Object.entries(obj).filter(([key,value])=>!['api_uri','id','diagrams'].includes(key)&&value!==null&&value!==undefined&&value!==''&&typeof value!=='object').slice(0,limit||16).map(([key,value])=>'<div class="info-cell"><small>'+esc(this.prettyKey(key))+'</small><b>'+esc(value)+'</b></div>').join('');
+    return Object.entries(obj).filter(([key,value])=>!['api_uri','url','href','link','source_url','source','website','web_url','id','diagrams'].includes(key)&&value!==null&&value!==undefined&&value!==''&&typeof value!=='object').slice(0,limit||16).map(([key,value])=>'<div class="info-cell"><small>'+esc(this.prettyKey(key))+'</small><b>'+esc(value)+'</b></div>').join('');
   }
   sensorData(sensor,name,kind){
     const value=sensor(name)?.attributes?.[name];
@@ -217,7 +217,7 @@ class UsaSportsHubPanel extends HTMLElement {
       return '<section class="page data-page"><p>USA SPORTS HUB · '+s.label+'</p><h2>Statistics</h2><span>Sport-specific statistics from every detail sensor currently available.</span><div class="stat-summary">'+metricCards+'</div><div class="stats-showcase"><article><header>STATISTICS</header>'+((this.detailRows(stats,120))||'<div class="empty-live">No statistics loaded.</div>')+'</article><article><header>SPORT DETAIL</header>'+(sportBlock||'<div class="empty-live">Open a game to load detail.</div>')+'</article><article><header>BOX SCORE</header><div class="info-grid">'+(this.infoGrid(box,30)||'<div class="empty-live">No box score fields loaded.</div>')+'</div></article><article><header>ODDS</header><div class="info-grid">'+(this.infoGrid(odds,20)||'<div class="empty-live">No odds available.</div>')+'</div></article><article><header>STADIUM</header><div class="info-grid">'+(this.infoGrid(stadium,20)||'<div class="empty-live">No stadium data available.</div>')+'</div></article><article><header>OFFICIALS</header>'+((this.detailRows(officials,30))||'<div class="empty-live">No officials data available.</div>')+'</article></div></section>';
     }
     if(tab==='News'){
-      const cards=news.map(x=>'<article class="news-card"><small>'+esc(x.kind||'UPDATE')+'</small><h3>'+esc(x.title||'News')+'</h3><p>'+esc(x.summary||'')+'</p>'+(x.url?'<a href="'+esc(x.url)+'" target="_blank" rel="noopener noreferrer">Read more ↗</a>':'')+'</article>').join('');
+      const cards=news.map(x=>'<article class="news-card"><small>'+esc(x.kind||'UPDATE')+'</small><h3>'+esc(x.title||'News')+'</h3><p>'+esc(x.summary||'')+'</p></article>').join('');
       const tickerRows=this.detailRows(ticker,30);
       return '<section class="page data-page"><p>USA SPORTS HUB · '+s.label+'</p><h2>News & Game Reports</h2><span>Previews, recaps and live ticker information from the sport feed.</span><div class="news-grid">'+(cards||'<div class="empty-live large">No current news or reports available.</div>')+'</div>'+(tickerRows?'<div class="ticker-panel"><h3>Live ticker</h3>'+tickerRows+'</div>':'')+'</section>';
     }
