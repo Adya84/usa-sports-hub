@@ -65,7 +65,7 @@ class UsaSportSensor(SensorEntity):
             identifiers={(DOMAIN, self.entry.entry_id)},
             name="USA Sports Hub",
             manufacturer="USA Sports Hub",
-            model="theScore live sports data",
+            model="TS live sports data",
         )
 
     @property
@@ -95,11 +95,11 @@ class UsaSportSensor(SensorEntity):
 
         if self.section == "status":
             return {
-                "provider": "theScore",
+                "provider": "TS",
                 "provider_error": data.get("error"),
                 "live_polling": (self.coordinator.data or {}).get("live_polling", False),
                 "selected_game": (data.get("game_detail") or {}).get("game_id"),
-                "api_base": f"https://api.thescore.com/{self.sport}",
+                "api_base": "TS",
             }
 
         value = data.get(self.section)
@@ -112,6 +112,6 @@ class UsaSportSensor(SensorEntity):
             self.section: value,
             "sport": self.sport,
             "league": LABELS[self.sport],
-            "provider": "theScore",
+            "provider": "TS",
             "updated": updated.isoformat() if updated else None,
         }
