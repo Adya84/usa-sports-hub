@@ -12,11 +12,12 @@ from homeassistant.helpers import entity_registry as er
 
 from .coordinator import UsaSportsCoordinator
 from .const import DOMAIN
+from .headshots import MlbHeadshotView
 
 PLATFORMS = ["sensor"]
 PANEL_URL = "usa-sports-hub"
 PANEL_NAME = "usa-sports-hub-panel"
-PANEL_VERSION = "0.0.3-beta.17"
+PANEL_VERSION = "0.0.3-beta.18"
 PANEL_STATIC_URL = "/usa_sports_hub/usa-sports-hub-panel.js"
 PANEL_MODULE_URL = f"{PANEL_STATIC_URL}?v={PANEL_VERSION}"
 PANEL_SCRIPT_PATH = Path(__file__).parent / "frontend" / "usa-sports-hub-panel.js"
@@ -71,6 +72,9 @@ def async_cleanup_obsolete_favourite_devices(
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     hass.data.setdefault(DOMAIN, {})
+    if not hass.data[DOMAIN].get("mlb_headshot_view"):
+        hass.http.register_view(MlbHeadshotView(hass))
+        hass.data[DOMAIN]["mlb_headshot_view"] = True
     await hass.http.async_register_static_paths([
         StaticPathConfig(PANEL_STATIC_URL, str(PANEL_SCRIPT_PATH), False),
         StaticPathConfig(PANEL_BACKGROUND_URL, str(PANEL_BACKGROUND_PATH), False),

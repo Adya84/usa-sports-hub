@@ -404,11 +404,10 @@ class UsaSportsHubPanel extends HTMLElement {
 /* MLB guard: never show a generic roster or 0-0 count as selected-game data. */
 UsaSportsHubPanel.prototype.mlbPlayerPhoto=function(player,sizeClass){
   const id=player?.id||player?.player_id||player?.person?.id||'';
-  // MLB's player-id image route is reliable across the live feed and final
-  // box-score payloads. Prefer it over legacy provider headshot URLs, which
-  // can return a fallback or fail to render in the Home Assistant panel.
+  // Route portraits through Home Assistant. This avoids third-party image CSP
+  // and referrer issues while keeping a browser-cached official MLB headshot.
   const url=id
-    ? `https://img.mlbstatic.com/mlb-photos/image/upload/w_213,q_auto:best/v1/people/${encodeURIComponent(id)}/headshot/67/current.png`
+    ? `/api/usa_sports_hub/mlb/headshot/${encodeURIComponent(id)}`
     : (player?.headshot||player?.image||player?.headshot_url||'');
   const name=player?.full_name||player?.player_name||player?.name||'Player';
   return url
