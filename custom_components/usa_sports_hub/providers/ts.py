@@ -250,22 +250,50 @@ class TSProvider(ProviderClient):
                 game_date = parsedate_to_datetime(raw_game_date).date().isoformat()
                 home_name = str((event.get("home_team") or {}).get("full_name") or (event.get("home_team") or {}).get("name") or "").lower()
                 away_name = str((event.get("away_team") or {}).get("full_name") or (event.get("away_team") or {}).get("name") or "").lower()
-                schedule = await self.async_get_json(
-                    f"{MLB_STATS_BASE}/schedule?sportId=1&date={game_date}"
+                # theScore's displayed game date can cross the MLB schedule
+                # boundary around midnight. Search adjacent days and prefer a
+                # game in the same state (especially an active live game)
+                # rather than accidentally selecting tomorrow's roster.
+                parsed_day = datetime.fromisoformat(game_date).date()
+                schedule_dates = [
+                    (parsed_day + timedelta(days=offset)).isoformat()
+                    for offset in (-1, 0, 1)
+                ]
+                schedules = await asyncio.gather(
+                    *(
+                        self.async_get_json(
+                            f"{MLB_STATS_BASE}/schedule?sportId=1&date={schedule_day}"
+                        )
+                        for schedule_day in schedule_dates
+                    ),
+                    return_exceptions=True,
                 )
-                for day in (schedule.get("dates", []) if isinstance(schedule, dict) else []):
-                    for game in day.get("games", []) or []:
-                        teams = game.get("teams") if isinstance(game.get("teams"), dict) else {}
-                        home = ((teams.get("home") or {}).get("team") or {}) if isinstance(teams.get("home"), dict) else {}
-                        away = ((teams.get("away") or {}).get("team") or {}) if isinstance(teams.get("away"), dict) else {}
-                        if (
-                            str(home.get("name") or "").lower() == home_name
-                            and str(away.get("name") or "").lower() == away_name
-                        ):
-                            mlb_game_pk = game.get("gamePk")
-                            break
-                    if mlb_game_pk:
-                        break
+                candidates = []
+                for schedule in schedules:
+                    if not isinstance(schedule, dict):
+                        continue
+                    for day in schedule.get("dates", []):
+                        for game in day.get("games", []) or []:
+                            teams = game.get("teams") if isinstance(game.get("teams"), dict) else {}
+                            home = ((teams.get("home") or {}).get("team") or {}) if isinstance(teams.get("home"), dict) else {}
+                            away = ((teams.get("away") or {}).get("team") or {}) if isinstance(teams.get("away"), dict) else {}
+                            if (
+                                str(home.get("name") or "").lower() == home_name
+                                and str(away.get("name") or "").lower() == away_name
+                            ):
+                                candidates.append(game)
+                event_status = str(event.get("status") or event.get("event_status") or "").lower()
+                preferred_state = (
+                    "live" if event_status in {"in_progress", "live"}
+                    else "final" if event_status == "final"
+                    else "preview"
+                )
+                def _candidate_rank(game: dict[str, Any]) -> int:
+                    status = game.get("status") if isinstance(game.get("status"), dict) else {}
+                    state = str(status.get("abstractGameState") or "").lower()
+                    return 0 if state == preferred_state else 1
+                if candidates:
+                    mlb_game_pk = sorted(candidates, key=_candidate_rank)[0].get("gamePk")
             except Exception:
                 mlb_game_pk = None
 
