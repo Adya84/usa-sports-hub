@@ -14,7 +14,9 @@ from .providers.ts import MlbProvider, NbaProvider, NflProvider, NhlProvider
 
 _LOGGER = logging.getLogger(__name__)
 SPORTS = ("nfl", "nba", "mlb", "nhl")
-CACHE_VERSION = 2
+# Keep the existing on-disk cache readable. New team keys have safe defaults
+# during restore, so a storage migration is not required for this additive schema.
+CACHE_VERSION = 1
 CACHE_SAVE_DELAY_SECONDS = 15
 GAME_DETAIL_TIMEOUT_SECONDS = 8
 

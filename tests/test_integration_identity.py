@@ -39,3 +39,7 @@ class IntegrationIdentityTests(unittest.TestCase):
         self.assertIn('"team_favourites"', coordinator)
         self.assertIn('"add_team_favourite"', setup)
         self.assertIn('"remove_team_favourite"', setup)
+
+    def test_cache_schema_remains_compatible_with_existing_installations(self):
+        source = Path("custom_components/usa_sports_hub/coordinator.py").read_text(encoding="utf-8")
+        self.assertIn("CACHE_VERSION = 1", source)
