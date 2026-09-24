@@ -7,8 +7,6 @@ from homeassistant.components.frontend import async_register_built_in_panel
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers import entity_registry as er
 
 from .coordinator import UsaSportsCoordinator
 from .const import DOMAIN
@@ -39,35 +37,6 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.config_entries.async_update_entry(entry, data=data, version=3)
     return True
 
-
-def async_cleanup_obsolete_favourite_devices(
-    hass: HomeAssistant, entry: ConfigEntry, favourites: list[dict]
-) -> None:
-    """Remove sensors for clubs that are no longer saved favourites."""
-    device_registry = dr.async_get(hass)
-    entity_registry = er.async_get(hass)
-    device_prefix = f"{entry.entry_id}_"
-    entity_prefix = f"{entry.entry_id}_favourite_"
-    active_device_identifiers = {
-        f"{entry.entry_id}_{str(favourite.get('home_competition') or favourite.get('competition') or '')}_{str(favourite.get('team') or '').casefold()}"
-        for favourite in favourites
-        if str(favourite.get("team") or "").strip()
-    }
-
-    for device in list(dr.async_entries_for_config_entry(device_registry, entry.entry_id)):
-        favourite_identifiers = {
-            identifier
-            for domain, identifier in device.identifiers
-            if domain == DOMAIN and identifier.startswith(device_prefix)
-        }
-        if not favourite_identifiers or favourite_identifiers & active_device_identifiers:
-            continue
-        for entity in er.async_entries_for_device(
-            entity_registry, device.id, include_disabled_entities=True
-        ):
-            if entity.unique_id.startswith(entity_prefix):
-                entity_registry.async_remove(entity.entity_id)
-        device_registry.async_remove_device(device.id)
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
