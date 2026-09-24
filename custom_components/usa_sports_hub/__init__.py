@@ -17,7 +17,7 @@ from .headshots import MlbHeadshotView
 PLATFORMS = ["sensor"]
 PANEL_URL = "usa-sports-hub"
 PANEL_NAME = "usa-sports-hub-panel"
-PANEL_VERSION = "0.0.3-beta.29"
+PANEL_VERSION = "0.0.3-beta.30"
 PANEL_STATIC_URL = "/usa_sports_hub/usa-sports-hub-panel.js"
 PANEL_MODULE_URL = f"{PANEL_STATIC_URL}?v={PANEL_VERSION}"
 PANEL_SCRIPT_PATH = Path(__file__).parent / "frontend" / "usa-sports-hub-panel.js"
@@ -109,8 +109,9 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 
     async def async_select_live_match(call: ServiceCall) -> None:
         fixture_id = str(call.data.get("fixture_id") or "").strip()
+        sport = str(call.data.get("sport") or "").strip().lower()
         async for coordinator in _coordinators(call):
-            await coordinator.async_set_selected_live_match(fixture_id)
+            await coordinator.async_set_selected_live_match(fixture_id, sport=sport)
 
     async def async_select_competition(call: ServiceCall) -> None:
         competition = str(call.data.get("competition") or "").strip()

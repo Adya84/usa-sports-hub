@@ -22,3 +22,8 @@ test('MLB provider replaces generic play records with the official selected-game
   const replacement = source.indexOf('detail["play_by_play"] = converted');
   assert.ok(officialFeed >= 0 && replacement > officialFeed);
 });
+
+test('game selection identifies its sport without waiting for a full refresh', () => {
+  const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
+  assert.match(source, /select_live_match',\{fixture_id:this\.selectedLiveGame,sport:this\.sport\}/);
+});

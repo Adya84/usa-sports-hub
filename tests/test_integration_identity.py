@@ -21,4 +21,10 @@ class IntegrationIdentityTests(unittest.TestCase):
         selection = source[source.index("async def async_set_selected_live_match"):]
 
         self.assertIn("GAME_DETAIL_TIMEOUT_SECONDS", selection)
-        self.assertIn("return\n\n        # Fallback only", selection)
+        self.assertNotIn("await self.async_request_refresh()", selection)
+
+    def test_selected_game_accepts_the_sport_sent_by_the_panel(self):
+        source = Path("custom_components/usa_sports_hub/coordinator.py").read_text(encoding="utf-8")
+
+        self.assertIn("async_set_selected_live_match(self, fixture_id, sport=None)", source)
+        self.assertIn("requested_sport", source)

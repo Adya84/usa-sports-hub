@@ -204,7 +204,7 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
             "provider": "TS",
         }
 
-    async def async_set_selected_live_match(self, fixture_id):
+    async def async_set_selected_live_match(self, fixture_id, sport=None):
         """Select a game and load only that game's detail feed."""
         game_id = str(fixture_id or "").strip()
         if not game_id:
@@ -212,11 +212,13 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
             self.selected_live_sport = None
             return
 
-        matched_sport = None
-        for sport, item in self.cache.items():
-            if any(str(game.get("game_id") or "") == game_id for game in item.get("games", []) or []):
-                matched_sport = sport
-                break
+        requested_sport = str(sport or "").strip().lower()
+        matched_sport = requested_sport if requested_sport in self.providers else None
+        if not matched_sport:
+            for candidate_sport, item in self.cache.items():
+                if any(str(game.get("game_id") or "") == game_id for game in item.get("games", []) or []):
+                    matched_sport = candidate_sport
+                    break
 
         self.selected_live_game_id = game_id
         self.selected_live_sport = matched_sport
@@ -249,8 +251,9 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
                 self.async_set_updated_data(self._compose_data())
                 return
 
-        # Fallback only when the selected game cannot be found in the cache.
-        await self.async_request_refresh()
+        # Do not turn a single unknown fixture into a full-sport refresh. The
+        # next regular poll will repopulate its schedule without blocking UI.
+        _LOGGER.warning("Selected game %s has no supported sport context", game_id)
 
     async def _async_update_data(self):
         # When the user has a live game open, refresh only that game's rich
