@@ -225,46 +225,70 @@ class TSProvider(ProviderClient):
                     )
 
         # MLB sometimes exposes no usable play-by-play through TS even while
-        # the game is live. Use MLB's public live game feed as a detail fallback
-        # so the Game Centre can still show at-bats, pitch events and inning flow.
+        # the game is live. Resolve the matching MLB gamePk from the public MLB
+        # schedule feed, then use its playByPlay endpoint as a detail fallback.
         if self.league == "mlb" and not detail["play_by_play"]:
+            mlb_game_pk = None
             try:
-                mlb_pbp = await self.async_get_json(
-                    f"{MLB_STATS_BASE}/game/{game_id}/playByPlay"
+                game_date = str(event.get("game_date") or "")[:10]
+                home_name = str((event.get("home_team") or {}).get("full_name") or (event.get("home_team") or {}).get("name") or "").lower()
+                away_name = str((event.get("away_team") or {}).get("full_name") or (event.get("away_team") or {}).get("name") or "").lower()
+                schedule = await self.async_get_json(
+                    f"{MLB_STATS_BASE}/schedule?sportId=1&date={game_date}"
                 )
+                for day in (schedule.get("dates", []) if isinstance(schedule, dict) else []):
+                    for game in day.get("games", []) or []:
+                        teams = game.get("teams") if isinstance(game.get("teams"), dict) else {}
+                        home = ((teams.get("home") or {}).get("team") or {}) if isinstance(teams.get("home"), dict) else {}
+                        away = ((teams.get("away") or {}).get("team") or {}) if isinstance(teams.get("away"), dict) else {}
+                        h = str(home.get("name") or "").lower()
+                        a = str(away.get("name") or "").lower()
+                        if h == home_name and a == away_name:
+                            mlb_game_pk = game.get("gamePk")
+                            break
+                    if mlb_game_pk:
+                        break
             except Exception:
-                mlb_pbp = {}
-            if isinstance(mlb_pbp, dict):
-                all_plays = mlb_pbp.get("allPlays")
-                if isinstance(all_plays, list):
-                    converted = []
-                    for play in all_plays:
-                        if not isinstance(play, dict):
-                            continue
-                        result = play.get("result") if isinstance(play.get("result"), dict) else {}
-                        about = play.get("about") if isinstance(play.get("about"), dict) else {}
-                        matchup = play.get("matchup") if isinstance(play.get("matchup"), dict) else {}
-                        count = play.get("count") if isinstance(play.get("count"), dict) else {}
-                        batter = matchup.get("batter") if isinstance(matchup.get("batter"), dict) else {}
-                        pitcher = matchup.get("pitcher") if isinstance(matchup.get("pitcher"), dict) else {}
-                        converted.append(
-                            {
-                                "description": result.get("description") or result.get("event"),
-                                "event": result.get("event"),
-                                "inning": about.get("inning"),
-                                "half_inning": about.get("halfInning"),
-                                "is_scoring_play": about.get("isScoringPlay"),
-                                "away_score": result.get("awayScore"),
-                                "home_score": result.get("homeScore"),
-                                "rbi": result.get("rbi"),
-                                "balls": count.get("balls"),
-                                "strikes": count.get("strikes"),
-                                "outs": count.get("outs"),
-                                "batter": batter.get("fullName"),
-                                "pitcher": pitcher.get("fullName"),
-                            }
-                        )
-                    detail["play_by_play"].extend(converted)
+                mlb_game_pk = None
+
+            if mlb_game_pk:
+                try:
+                    mlb_pbp = await self.async_get_json(
+                        f"{MLB_STATS_BASE}/game/{mlb_game_pk}/playByPlay"
+                    )
+                except Exception:
+                    mlb_pbp = {}
+                if isinstance(mlb_pbp, dict):
+                    all_plays = mlb_pbp.get("allPlays")
+                    if isinstance(all_plays, list):
+                        converted = []
+                        for play in all_plays:
+                            if not isinstance(play, dict):
+                                continue
+                            result = play.get("result") if isinstance(play.get("result"), dict) else {}
+                            about = play.get("about") if isinstance(play.get("about"), dict) else {}
+                            matchup = play.get("matchup") if isinstance(play.get("matchup"), dict) else {}
+                            count = play.get("count") if isinstance(play.get("count"), dict) else {}
+                            batter = matchup.get("batter") if isinstance(matchup.get("batter"), dict) else {}
+                            pitcher = matchup.get("pitcher") if isinstance(matchup.get("pitcher"), dict) else {}
+                            converted.append(
+                                {
+                                    "description": result.get("description") or result.get("event"),
+                                    "event": result.get("event"),
+                                    "inning": about.get("inning"),
+                                    "half_inning": about.get("halfInning"),
+                                    "is_scoring_play": about.get("isScoringPlay"),
+                                    "away_score": result.get("awayScore"),
+                                    "home_score": result.get("homeScore"),
+                                    "rbi": result.get("rbi"),
+                                    "balls": count.get("balls"),
+                                    "strikes": count.get("strikes"),
+                                    "outs": count.get("outs"),
+                                    "batter": batter.get("fullName"),
+                                    "pitcher": pitcher.get("fullName"),
+                                }
+                            )
+                        detail["play_by_play"].extend(converted)
 
         # Follow additional game-detail endpoints advertised by the event/box score.
         # Different sports expose lineups, injuries, rosters, player stats and
