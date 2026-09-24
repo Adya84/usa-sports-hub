@@ -4,7 +4,15 @@ from __future__ import annotations
 from typing import Any
 
 
-LIVE_STATES = {"in_progress", "inprogress", "live", "critical", "in", "playing"}
+LIVE_STATES = {
+    "in_progress", "inprogress", "live", "critical", "in", "playing",
+    "started", "active", "ongoing",
+}
+
+
+def _status_key(value: Any) -> str:
+    """Normalise provider status strings for reliable live detection."""
+    return str(value or "").strip().lower().replace("-", "_").replace(" ", "_")
 
 
 def _number(value: Any) -> int | float | None:
@@ -53,8 +61,25 @@ def normalize_ts_event(event: dict[str, Any], league: str) -> dict[str, Any]:
     score = box.get("score") if isinstance(box.get("score"), dict) else {}
     home_score = score.get("home") if isinstance(score.get("home"), dict) else {}
     away_score = score.get("away") if isinstance(score.get("away"), dict) else {}
-    state = str(event.get("event_status") or event.get("status") or "").lower()
-    final = state == "final" or str(progress.get("event_status") or "").lower() == "final"
+    state = _status_key(event.get("event_status") or event.get("status"))
+    progress_state = _status_key(progress.get("event_status") or progress.get("status"))
+    final = state in {"final", "completed", "complete"} or progress_state in {"final", "completed", "complete"}
+
+    # Some league feeds report the event itself as pre-game while the nested
+    # box-score progress object already shows an active period/clock. Treat
+    # either source as authoritative for live state so live games are not lost.
+    has_live_progress = bool(
+        progress
+        and not final
+        and (
+            progress_state in LIVE_STATES
+            or progress.get("clock") not in (None, "")
+            or progress.get("segment") not in (None, "", 0)
+            or progress.get("segment_string")
+            or progress.get("segment_description")
+        )
+    )
+    is_live = (state in LIVE_STATES or progress_state in LIVE_STATES or has_live_progress) and not final
 
     tv = event.get("tv_listings_by_country_code")
     broadcasts: list[str] = []
@@ -89,7 +114,7 @@ def normalize_ts_event(event: dict[str, Any], league: str) -> dict[str, Any]:
         "away_score": _number(away_score.get("score")),
         "status": event.get("event_status") or event.get("status") or "pre_game",
         "status_detail": progress.get("clock_label") or progress.get("string") or event.get("game_description") or str(event.get("event_status") or "Pre Game"),
-        "is_live": state in LIVE_STATES,
+        "is_live": is_live,
         "is_final": final,
         "start_time": event.get("game_date"),
         "game_type": event.get("game_type"),
