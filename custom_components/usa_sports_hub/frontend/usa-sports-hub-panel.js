@@ -422,7 +422,10 @@ UsaSportsHubPanel.prototype.mlbGameCentre=function(s,items,sensor){
     const state=sensor(name); if(!state||!fields.includes(name))return state;
     const source=state.attributes?.[name]||[];
     const allowed=name==='situations'?Boolean(selected.is_live):liveOrFinal;
-    const filtered=allowed&&Array.isArray(source)?source.filter(row=>names.has(String(row?.team_name||'').toLowerCase())):[];
+    const filtered=!allowed||!Array.isArray(source)?[]:
+      (name==='situations'?source:(['lineups','players'].includes(name)
+        ?source.filter(row=>names.has(String(row?.team_name||'').toLowerCase()))
+        :source));
     return {...state,attributes:{...state.attributes,[name]:filtered}};
   };
   let html=usaMlbGameCentre.call(this,s,items,safeSensor)

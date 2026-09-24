@@ -184,7 +184,10 @@ class TSProvider(ProviderClient):
         box = event.get("box_score") if isinstance(event.get("box_score"), dict) else {}
         box_uri = box.get("api_uri")
         box_score: dict[str, Any] = {}
-        if isinstance(box_uri, str) and box_uri:
+        # MLB's official live feed is the authoritative rich game source.
+        # Do not make an extra TS box-score round trip before it; that delayed
+        # current batter, count and bases by a full upstream request.
+        if self.league != "mlb" and isinstance(box_uri, str) and box_uri:
             box_score = await self.async_get_json(f"{API_BASE}{box_uri}")
 
         detail: dict[str, Any] = {
