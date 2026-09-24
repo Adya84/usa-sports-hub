@@ -229,6 +229,7 @@ class TSProvider(ProviderClient):
         # then use the public live game feed for inning linescore/current state.
         # This is internal-only data enrichment; source URLs are never rendered.
         mlb_live_data: dict[str, Any] = {}
+        mlb_game_data: dict[str, Any] = {}
         if self.league == "mlb":
             mlb_game_pk = None
             try:
@@ -262,9 +263,20 @@ class TSProvider(ProviderClient):
                 except Exception:
                     feed = {}
                 if isinstance(feed, dict):
-                    mlb_live_data = feed.get("liveData") if isinstance(feed.get("liveData"), dict) else {}
+                    candidate_live = feed.get("liveData") if isinstance(feed.get("liveData"), dict) else {}
+                    candidate_game = feed.get("gameData") if isinstance(feed.get("gameData"), dict) else {}
+                    feed_teams = candidate_game.get("teams") if isinstance(candidate_game.get("teams"), dict) else {}
+                    feed_home = feed_teams.get("home") if isinstance(feed_teams.get("home"), dict) else {}
+                    feed_away = feed_teams.get("away") if isinstance(feed_teams.get("away"), dict) else {}
+                    # Guard against ever mixing detail from a different MLB game.
+                    if (
+                        str(feed_home.get("name") or "").lower() == home_name
+                        and str(feed_away.get("name") or "").lower() == away_name
+                    ):
+                        mlb_live_data = candidate_live
+                        mlb_game_data = candidate_game
 
-                if not detail["play_by_play"]:
+                if not detail["play_by_play"] and mlb_live_data:
                     plays_root = mlb_live_data.get("plays") if isinstance(mlb_live_data.get("plays"), dict) else {}
                     all_plays = plays_root.get("allPlays")
                     if not isinstance(all_plays, list):
@@ -336,6 +348,7 @@ class TSProvider(ProviderClient):
             "drives": detail["drives"],
             "related": related_payloads,
             "mlb_live": mlb_live_data,
+            "mlb_game": mlb_game_data,
         }
         detail["scoring"] = _dedupe_dicts(
             _objects_with_keys(
@@ -491,6 +504,135 @@ class TSProvider(ProviderClient):
                 "third_base": bool(offense.get("third")),
             }
             detail["situations"] = [current_situation] + detail["situations"]
+
+
+        # For MLB, replace generic recursive matches with a clean, game-specific
+        # model from the official live box score. This prevents unrelated team,
+        # league and season metadata from appearing as lineups or game stats.
+        if self.league == "mlb" and mlb_live_data:
+            live_box = mlb_live_data.get("boxscore") if isinstance(mlb_live_data.get("boxscore"), dict) else {}
+            live_teams = live_box.get("teams") if isinstance(live_box.get("teams"), dict) else {}
+            clean_players: list[dict[str, Any]] = []
+            clean_lineups: list[dict[str, Any]] = []
+            clean_stats: list[dict[str, Any]] = []
+
+            for side in ("away", "home"):
+                team_box = live_teams.get(side) if isinstance(live_teams.get(side), dict) else {}
+                team_info = team_box.get("team") if isinstance(team_box.get("team"), dict) else {}
+                team_name = team_info.get("name") or side.title()
+                player_map = team_box.get("players") if isinstance(team_box.get("players"), dict) else {}
+
+                team_stats = team_box.get("teamStats") if isinstance(team_box.get("teamStats"), dict) else {}
+                for group_name in ("batting", "pitching", "fielding"):
+                    group = team_stats.get(group_name)
+                    if isinstance(group, dict):
+                        row = {"name": f"{team_name} {group_name.title()}", "team_name": team_name, "group": group_name}
+                        for key, value in group.items():
+                            if not isinstance(value, (dict, list)):
+                                row[key] = value
+                        clean_stats.append(row)
+
+                for player in player_map.values():
+                    if not isinstance(player, dict):
+                        continue
+                    person = player.get("person") if isinstance(player.get("person"), dict) else {}
+                    position = player.get("position") if isinstance(player.get("position"), dict) else {}
+                    name = person.get("fullName") or person.get("name")
+                    if not name:
+                        continue
+                    base = {
+                        "id": str(person.get("id") or ""),
+                        "full_name": name,
+                        "team_name": team_name,
+                        "side": side,
+                        "position_abbreviation": position.get("abbreviation") or position.get("code"),
+                        "position_name": position.get("name"),
+                        "jersey_number": player.get("jerseyNumber"),
+                        "batting_order": player.get("battingOrder"),
+                        "game_status": player.get("gameStatus"),
+                    }
+                    clean_players.append(base)
+
+                    if player.get("battingOrder"):
+                        lineup = dict(base)
+                        try:
+                            lineup["batting_spot"] = int(str(player.get("battingOrder"))) // 100
+                        except (TypeError, ValueError):
+                            lineup["batting_spot"] = player.get("battingOrder")
+                        clean_lineups.append(lineup)
+
+                    player_stats = player.get("stats") if isinstance(player.get("stats"), dict) else {}
+                    for group_name in ("batting", "pitching", "fielding"):
+                        group = player_stats.get(group_name)
+                        if not isinstance(group, dict) or not group:
+                            continue
+                        row = {
+                            "name": name,
+                            "full_name": name,
+                            "team_name": team_name,
+                            "position_abbreviation": base.get("position_abbreviation"),
+                            "group": group_name,
+                        }
+                        for key, value in group.items():
+                            if not isinstance(value, (dict, list)):
+                                row[key] = value
+                        clean_stats.append(row)
+
+            clean_lineups.sort(
+                key=lambda row: (
+                    0 if row.get("side") == "away" else 1,
+                    row.get("batting_spot") if isinstance(row.get("batting_spot"), int) else 99,
+                )
+            )
+            detail["players"] = clean_players
+            detail["lineups"] = clean_lineups
+            detail["statistics"] = clean_stats
+
+            officials = live_box.get("officials") if isinstance(live_box.get("officials"), list) else []
+            clean_officials: list[dict[str, Any]] = []
+            for item in officials:
+                if not isinstance(item, dict):
+                    continue
+                official = item.get("official") if isinstance(item.get("official"), dict) else {}
+                clean_officials.append(
+                    {
+                        "name": official.get("fullName") or official.get("name") or "Official",
+                        "official_type": item.get("officialType"),
+                    }
+                )
+            detail["officials"] = clean_officials
+
+            plays_root = mlb_live_data.get("plays") if isinstance(mlb_live_data.get("plays"), dict) else {}
+            all_mlb_plays = plays_root.get("allPlays") if isinstance(plays_root.get("allPlays"), list) else []
+            clean_scoring: list[dict[str, Any]] = []
+            for play in all_mlb_plays:
+                if not isinstance(play, dict):
+                    continue
+                about = play.get("about") if isinstance(play.get("about"), dict) else {}
+                if not about.get("isScoringPlay"):
+                    continue
+                result = play.get("result") if isinstance(play.get("result"), dict) else {}
+                clean_scoring.append(
+                    {
+                        "description": result.get("description") or result.get("event"),
+                        "event": result.get("event"),
+                        "inning": about.get("inning"),
+                        "half_inning": about.get("halfInning"),
+                        "away_score": result.get("awayScore"),
+                        "home_score": result.get("homeScore"),
+                        "rbi": result.get("rbi"),
+                    }
+                )
+            detail["scoring"] = clean_scoring
+
+            venue = mlb_game_data.get("venue") if isinstance(mlb_game_data.get("venue"), dict) else {}
+            if venue:
+                location = venue.get("location") if isinstance(venue.get("location"), dict) else {}
+                detail["stadium"] = {
+                    "name": venue.get("name"),
+                    "city": location.get("city"),
+                    "state": location.get("stateAbbrev") or location.get("state"),
+                }
 
         # Keep the live sensor useful but bounded.
         detail["play_by_play"] = detail["play_by_play"][-160:]
