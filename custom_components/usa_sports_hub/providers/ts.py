@@ -391,6 +391,39 @@ class TSProvider(ProviderClient):
             + _named_lists(combined, {"players", "roster", "rosters", "skaters", "goalies"}, 160),
             160,
         )
+        # When an MLB event has not yet resolved to the official MLB live feed,
+        # retain only real theScore roster people. The raw recursive collection
+        # also contains teams/leagues, which previously appeared in the Players
+        # sensor and carried no usable portrait data.
+        if self.league == "mlb" and not mlb_live_data:
+            fallback_players: list[dict[str, Any]] = []
+            for row in detail["players"]:
+                if not isinstance(row, dict):
+                    continue
+                player_id = str(row.get("id") or row.get("player_id") or "")
+                name = row.get("full_name") or row.get("first_initial_and_last_name")
+                headshots = row.get("headshots") if isinstance(row.get("headshots"), dict) else {}
+                headshot = (
+                    headshots.get("w192xh192")
+                    or headshots.get("large")
+                    or headshots.get("original")
+                    or row.get("headshot")
+                )
+                if not (player_id and name and headshot):
+                    continue
+                fallback_players.append(
+                    {
+                        "id": player_id,
+                        "player_id": player_id,
+                        "full_name": name,
+                        "headshot": headshot,
+                        "position_abbreviation": row.get("position_abbreviation"),
+                        "jersey_number": row.get("number") or row.get("jersey_number"),
+                        "team_name": row.get("team_name"),
+                    }
+                )
+            if fallback_players:
+                detail["players"] = _dedupe_dicts(fallback_players, 160)
         detail["injuries"] = _dedupe_dicts(
             _objects_with_keys(
                 combined,
