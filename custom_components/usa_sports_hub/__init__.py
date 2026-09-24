@@ -16,7 +16,7 @@ from .const import DOMAIN
 PLATFORMS = ["sensor"]
 PANEL_URL = "usa-sports-hub"
 PANEL_NAME = "usa-sports-hub-panel"
-PANEL_VERSION = "0.0.3-beta.16"
+PANEL_VERSION = "0.0.3-beta.17"
 PANEL_STATIC_URL = "/usa_sports_hub/usa-sports-hub-panel.js"
 PANEL_MODULE_URL = f"{PANEL_STATIC_URL}?v={PANEL_VERSION}"
 PANEL_SCRIPT_PATH = Path(__file__).parent / "frontend" / "usa-sports-hub-panel.js"
@@ -164,9 +164,16 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     coordinator = UsaSportsCoordinator(hass, entry)
-    await coordinator.async_config_entry_first_refresh()
+    restored = await coordinator.async_restore_cache()
     hass.data[DOMAIN][entry.entry_id] = {"coordinator": coordinator}
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    # A restored cache lets the panel and sensors render straight away. Refresh
+    # it after setup so Home Assistant never waits on four provider calls just
+    # to show the last known scores, fixtures and player data.
+    if restored:
+        hass.async_create_task(coordinator.async_config_entry_first_refresh())
+    else:
+        await coordinator.async_config_entry_first_refresh()
     return True
 
 

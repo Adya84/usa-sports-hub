@@ -6,6 +6,7 @@ import logging
 from datetime import timedelta
 
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .providers.base import ProviderError
@@ -13,6 +14,8 @@ from .providers.ts import MlbProvider, NbaProvider, NflProvider, NhlProvider
 
 _LOGGER = logging.getLogger(__name__)
 SPORTS = ("nfl", "nba", "mlb", "nhl")
+CACHE_VERSION = 1
+CACHE_SAVE_DELAY_SECONDS = 15
 
 
 class UsaSportsCoordinator(DataUpdateCoordinator):
@@ -20,6 +23,7 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
 
     def __init__(self, hass, entry):
         self.entry = entry
+        self._store = Store(hass, CACHE_VERSION, f"{entry.entry_id}_sports_cache")
         self.selected_live_game_id = None
         self.selected_live_sport = None
         session = async_get_clientsession(hass)
@@ -46,6 +50,37 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
             _LOGGER,
             name="USA Sports Hub",
             update_interval=timedelta(minutes=10),
+        )
+
+    async def async_restore_cache(self) -> bool:
+        """Restore the last successful sports payload before polling again."""
+        stored = await self._store.async_load()
+        cached_sports = stored.get("sports") if isinstance(stored, dict) else None
+        if not isinstance(cached_sports, dict):
+            return False
+
+        restored = 0
+        for sport in SPORTS:
+            item = cached_sports.get(sport)
+            if not isinstance(item, dict):
+                continue
+            self.cache[sport] = {
+                **self.cache[sport],
+                **{key: item.get(key, self.cache[sport][key]) for key in self.cache[sport]},
+                "error": None,
+            }
+            restored += 1
+
+        if not restored:
+            return False
+        self.async_set_updated_data(self._compose_data())
+        _LOGGER.debug("Restored USA Sports Hub cache for %s sports", restored)
+        return True
+
+    def _schedule_cache_save(self) -> None:
+        """Persist successful data without making the update loop wait on disk."""
+        self._store.async_delay_save(
+            lambda: {"sports": self.cache}, CACHE_SAVE_DELAY_SECONDS
         )
 
     async def _refresh_sport(self, sport):
@@ -96,6 +131,7 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
                 "detail": detail,
                 "error": None,
             }
+            self._schedule_cache_save()
         except (ProviderError, ValueError, KeyError, TypeError) as err:
             self.cache[sport] = {**self.cache[sport], "error": str(err)}
             _LOGGER.warning("%s TS refresh failed: %s", sport.upper(), err)
@@ -168,6 +204,7 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
                     "detail": detail,
                     "error": None,
                 }
+                self._schedule_cache_save()
                 self.async_set_updated_data(self._compose_data())
                 return
             except (ProviderError, ValueError, KeyError, TypeError) as err:
@@ -197,6 +234,7 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
                         "detail": detail,
                         "error": None,
                     }
+                    self._schedule_cache_save()
                 except (ProviderError, ValueError, KeyError, TypeError) as err:
                     _LOGGER.debug("%s live game detail refresh failed: %s", sport.upper(), err)
                 data = self._compose_data()
