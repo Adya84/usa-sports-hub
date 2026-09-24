@@ -4,7 +4,7 @@ DOMAIN = "usa_sports_hub"
 
 NAME = "USA Sports Hub"
 
-VERSION = "0.1.0"
+VERSION = "0.0.4-beta.4"
 
 DEFAULT_SCAN_INTERVAL = 60
 
