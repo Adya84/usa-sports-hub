@@ -16,6 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 SPORTS = ("nfl", "nba", "mlb", "nhl")
 CACHE_VERSION = 1
 CACHE_SAVE_DELAY_SECONDS = 15
+GAME_DETAIL_TIMEOUT_SECONDS = 8
 
 
 class UsaSportsCoordinator(DataUpdateCoordinator):
@@ -230,14 +231,23 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
             }
             self.async_set_updated_data(self._compose_data())
             try:
-                detail = await self.providers[matched_sport].async_game_detail(game_id)
+                detail = await asyncio.wait_for(
+                    self.providers[matched_sport].async_game_detail(game_id),
+                    timeout=GAME_DETAIL_TIMEOUT_SECONDS,
+                )
                 self._store_game_detail(matched_sport, game_id, detail)
                 self.cache[matched_sport] = {**self.cache[matched_sport], "error": None}
                 self._schedule_cache_save()
                 self.async_set_updated_data(self._compose_data())
                 return
-            except (ProviderError, ValueError, KeyError, TypeError) as err:
+            except (ProviderError, ValueError, KeyError, TypeError, asyncio.TimeoutError) as err:
                 _LOGGER.warning("%s selected game detail failed: %s", matched_sport.upper(), err)
+                self.cache[matched_sport] = {
+                    **self.cache[matched_sport],
+                    "error": f"Selected game detail timed out or failed: {err}",
+                }
+                self.async_set_updated_data(self._compose_data())
+                return
 
         # Fallback only when the selected game cannot be found in the cache.
         await self.async_request_refresh()
@@ -257,11 +267,14 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
             )
             if selected and selected.get("is_live"):
                 try:
-                    detail = await self.providers[sport].async_game_detail(self.selected_live_game_id)
+                    detail = await asyncio.wait_for(
+                        self.providers[sport].async_game_detail(self.selected_live_game_id),
+                        timeout=GAME_DETAIL_TIMEOUT_SECONDS,
+                    )
                     self._store_game_detail(sport, str(self.selected_live_game_id), detail)
                     self.cache[sport] = {**self.cache[sport], "error": None}
                     self._schedule_cache_save()
-                except (ProviderError, ValueError, KeyError, TypeError) as err:
+                except (ProviderError, ValueError, KeyError, TypeError, asyncio.TimeoutError) as err:
                     _LOGGER.debug("%s live game detail refresh failed: %s", sport.upper(), err)
                 data = self._compose_data()
                 self.update_interval = timedelta(seconds=8)
