@@ -9,7 +9,7 @@ from .const import DOMAIN
 
 
 class UsaSportsHubConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Set up USA Sports Hub using theScore public data."""
+    """Set up USA Sports Hub using TS public data."""
 
     VERSION = 3
 
@@ -20,7 +20,7 @@ class UsaSportsHubConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._abort_if_unique_id_configured()
             return self.async_create_entry(
                 title="USA Sports Hub",
-                data={"provider_mode": "thescore"},
+                data={"provider_mode": "ts"},
             )
 
         return self.async_show_form(step_id="user", data_schema=vol.Schema({}))
