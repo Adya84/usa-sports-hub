@@ -15,7 +15,7 @@ from .headshots import MlbHeadshotView
 PLATFORMS = ["sensor"]
 PANEL_URL = "usa-sports-hub"
 PANEL_NAME = "usa-sports-hub-panel"
-PANEL_VERSION = "0.0.4-beta.6"
+PANEL_VERSION = "0.0.4-beta.5"
 PANEL_STATIC_URL = "/usa_sports_hub/usa-sports-hub-panel.js"
 PANEL_MODULE_URL = f"{PANEL_STATIC_URL}?v={PANEL_VERSION}"
 PANEL_SCRIPT_PATH = Path(__file__).parent / "frontend" / "usa-sports-hub-panel.js"
