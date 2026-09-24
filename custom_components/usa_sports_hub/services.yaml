@@ -1,1 +1,90 @@
+select_live_match:
+  name: Select game
+  description: Open detailed data for a game in the USA Sports Hub panel.
+  fields:
+    fixture_id:
+      name: Game ID
+      description: Provider game identifier.
+      required: true
+      selector:
+        text:
+    sport:
+      name: Sport
+      description: Sport containing the selected game.
+      required: false
+      selector:
+        select:
+          options:
+            - nfl
+            - nba
+            - mlb
+            - nhl
 
+select_team:
+  name: Select team
+  description: Select a team for the My Team dashboard.
+  fields:
+    sport:
+      name: Sport
+      required: true
+      selector:
+        select:
+          options:
+            - nfl
+            - nba
+            - mlb
+            - nhl
+    team_id:
+      name: Team ID
+      required: true
+      selector:
+        text:
+
+add_team_favourite:
+  name: Add favourite team
+  description: Save a team as one of the USA Sports Hub favourites.
+  fields:
+    sport:
+      name: Sport
+      required: true
+      selector:
+        select:
+          options:
+            - nfl
+            - nba
+            - mlb
+            - nhl
+    team_id:
+      name: Team ID
+      required: true
+      selector:
+        text:
+    team:
+      name: Team name
+      required: true
+      selector:
+        text:
+
+remove_team_favourite:
+  name: Remove favourite team
+  description: Remove a saved team from the USA Sports Hub favourites.
+  fields:
+    sport:
+      name: Sport
+      required: true
+      selector:
+        select:
+          options:
+            - nfl
+            - nba
+            - mlb
+            - nhl
+    team_id:
+      name: Team ID
+      required: true
+      selector:
+        text:
+
+refresh:
+  name: Refresh
+  description: Request an immediate USA Sports Hub data refresh.
