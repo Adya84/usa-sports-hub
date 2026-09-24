@@ -1,1 +1,1 @@
-"""theScore sports data provider package for USA Sports Hub."""
+"""TS sports data provider package for USA Sports Hub."""
