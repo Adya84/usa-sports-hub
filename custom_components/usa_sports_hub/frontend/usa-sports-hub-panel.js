@@ -185,10 +185,26 @@ class UsaSportsHubPanel extends HTMLElement {
       '<div class="mlb-mini-stat"><b>'+esc(statValue(x,'era'))+'</b><small>ERA</small></div></div>'
     ).join('');
 
+    // Scoring-play rows from theScore often contain the play sentence but no
+    // player object. Match that sentence back to the loaded roster so those
+    // cards receive the same portrait as the lineup.
+    const roster=[...lineups,...players].filter(x=>x&&typeof x==='object');
+    const scoringPerson=row=>{
+      const rowId=String(row?.id||row?.player_id||'');
+      const byId=rowId&&roster.find(person=>String(person?.id||person?.player_id||'')===rowId);
+      if(byId)return {...row,...byId,player_name:row.player_name||byId.full_name||byId.name||''};
+      const text=String(row?.player_name||row?.description||row?.event||'').toLowerCase();
+      const byName=roster
+        .map(person=>({person,name:String(person?.full_name||person?.name||'').trim()}))
+        .filter(item=>item.name.length>2&&text.includes(item.name.toLowerCase()))
+        .sort((a,b)=>b.name.length-a.name.length)[0]?.person;
+      return byName?{...row,...byName,player_name:row.player_name||byName.full_name||byName.name||''}:row;
+    };
     const scoreSummary=scoring.slice(0,40).map(x=>{
+      const person=scoringPerson(x);
       const inning=[x.half_inning,x.inning&&(''+x.inning)].filter(Boolean).join(' ')||'Scoring play';
       const text=this.pick(x,['description','event','text'])||'Scoring play';
-      return '<div class="mlb-score-event"><div class="mlb-score-inning">'+esc(inning)+'</div><div class="mlb-score-event-body with-photo">'+this.mlbPlayerPhoto(x,'score')+'<div><b>'+esc(x.player_name||'')+'</b><span>'+esc(text)+'</span></div></div></div>';
+      return '<div class="mlb-score-event"><div class="mlb-score-inning">'+esc(inning)+'</div><div class="mlb-score-event-body with-photo">'+this.mlbPlayerPhoto(person,'score')+'<div><b>'+esc(person.player_name||'')+'</b><span>'+esc(text)+'</span></div></div></div>';
     }).join('');
 
     const cleanPlayers=(lineups.length?lineups:players).filter(x=>{
