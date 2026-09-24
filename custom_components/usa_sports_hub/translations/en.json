@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "USA Sports Hub",
-        "description": "Set up NFL, NBA, MLB and NHL live data from theScore. No API key is required.",
+        "description": "Set up NFL, NBA, MLB and NHL live data from TS. No API key is required.",
         "data": {}
       }
     },
