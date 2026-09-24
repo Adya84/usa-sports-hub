@@ -112,6 +112,10 @@ class UsaSportSensor(SensorEntity):
                 "live_polling": (self.coordinator.data or {}).get("live_polling", False),
                 "selected_game": (data.get("game_detail") or {}).get("game_id"),
                 "api_base": "TS",
+                "team_favourites": getattr(self.coordinator, "team_favourites", []),
+                "selected_team_id": data.get("team_selected_id"),
+                "team_error": data.get("team_error"),
+                "team_updated": data.get("team_updated"),
             }
 
         value = data.get(self.section)

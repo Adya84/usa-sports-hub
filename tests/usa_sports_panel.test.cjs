@@ -35,3 +35,10 @@ test('game centre retains an in-panel snapshot for previously opened games', () 
   assert.match(source, /this\._gameDetailCache\.get\(selectedGameId\)/);
   assert.match(source, /Loading game data — this can take up to 30 seconds/);
 });
+
+test('My Team uses dedicated team sensors and saved favourite controls', () => {
+  const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
+  for (const value of ['team_profile', 'team_squad', 'team_statistics', 'team_leaders', 'team_injuries', 'add_team_favourite', 'remove_team_favourite', 'MY TEAM · SEASON SNAPSHOT', 'MY SQUAD']) {
+    assert.match(source, new RegExp(value));
+  }
+});

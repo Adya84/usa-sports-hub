@@ -2,7 +2,7 @@
 
 USA Sports Hub is a Home Assistant dashboard and sensor integration for major United States sports. It uses the familiar Football Hub panel system, redesigned with a USA Sports Hub identity and multi-sport navigation.
 
-> **Project status:** 0.0.3 beta is under active development. NFL, NBA, MLB and NHL now use a unified TS data provider with detailed live event, standings, box-score and play-by-play support.
+> **Project status:** 0.0.4 beta is under active development. NFL, NBA, MLB and NHL use a unified TS data provider with detailed live event, standings, box-score, play-by-play and team-hub support.
 
 ## Planned sports
 
@@ -20,6 +20,8 @@ The integration uses public JSON endpoints from TS and does not require users to
 - USA-themed Home Assistant panel with a shared sports-hub layout
 - League navigation for NFL, NBA, MLB, NHL, MLS and More Sports
 - Live games, upcoming schedules, results and standings
+- Persistent My Team hub with up to three saved favourites across all sports
+- Team profile, squad with player portraits, injury report, leaders and available team statistics
 - Team, player and leaderboard data
 - Favourite-team sensors and match information
 - Detailed live-game attributes for box scores and play-by-play
