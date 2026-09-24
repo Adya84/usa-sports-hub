@@ -401,6 +401,39 @@ class UsaSportsHubPanel extends HTMLElement {
   }
   donation(s){return `<section class="donation"><span class="donation-icon">${s.icon}</span><div><small>SUPPORT ${s.label}</small><h3>Keep USA Sports Hub in play</h3><p>Help support new ${s.label} data, features, and live game coverage.</p></div><div class="actions"><a href="https://ko-fi.com/ady1984" target="_blank" rel="noopener noreferrer">Support via Ko-fi</a><a href="https://paypal.me/graffidoodle" target="_blank" rel="noopener noreferrer">PayPal</a></div></section>`}
 }
+/* MLB guard: never show a generic roster or 0-0 count as selected-game data. */
+UsaSportsHubPanel.prototype.mlbPlayerPhoto=function(player,sizeClass){
+  const id=player?.id||player?.player_id||player?.person?.id||'';
+  const url=player?.headshot||player?.image||player?.headshot_url||
+    (id?`https://img.mlbstatic.com/mlb-photos/image/upload/w_213,q_auto:best/v1/people/${encodeURIComponent(id)}/headshot/67/current.png`:'');
+  const name=player?.full_name||player?.player_name||player?.name||'Player';
+  return url
+    ? '<img class="mlb-player-photo '+esc(sizeClass||'')+'" src="'+esc(url)+'" alt="'+esc(name)+'" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'"><span class="mlb-avatar '+esc(sizeClass||'')+'" style="display:none">'+esc(String(name||'?').charAt(0))+'</span>'
+    : '<span class="mlb-avatar '+esc(sizeClass||'')+'">'+esc(String(name||'?').charAt(0))+'</span>';
+};
+const usaMlbGameCentre=UsaSportsHubPanel.prototype.mlbGameCentre;
+UsaSportsHubPanel.prototype.mlbGameCentre=function(s,items,sensor){
+  const all=[...(items('live')||[]),...(items('fixtures')||[]),...(items('results')||[])];
+  const selected=all.find(game=>String(game.game_id||'')===String(this.selectedLiveGame||''))||{};
+  const liveOrFinal=Boolean(selected.is_live||selected.is_final);
+  const names=new Set([selected.home_team,selected.away_team].filter(Boolean).map(name=>String(name).toLowerCase()));
+  const fields=['lineups','players','statistics','situations','play_by_play','scoring'];
+  const safeSensor=name=>{
+    const state=sensor(name); if(!state||!fields.includes(name))return state;
+    const source=state.attributes?.[name]||[];
+    const allowed=name==='situations'?Boolean(selected.is_live):liveOrFinal;
+    const filtered=allowed&&Array.isArray(source)?source.filter(row=>names.has(String(row?.team_name||'').toLowerCase())):[];
+    return {...state,attributes:{...state.attributes,[name]:filtered}};
+  };
+  let html=usaMlbGameCentre.call(this,s,items,safeSensor)
+    .replace('Bases empty','First pitch pending')
+    .replace('0-0 · 0 outs','No live count yet')
+    .replace('No recent play available.','Lineups and live play details will appear when the game starts.');
+  if(!selected.is_live){
+    html=html.replace(/<section class="mlb-side-card"><h3>Current At Bat<\/h3>[\s\S]*?<\/section><section class="mlb-side-card"><h3>Team Comparison/, '<section class="mlb-side-card"><h3>Game Status</h3><div><b>'+esc(selected.is_final?'Final':'Pre-game')+'</b><span>At-bat, bases and count appear only while this game is live.</span></div></section><section class="mlb-side-card"><h3>Team Comparison');
+  }
+  return html;
+};
 /* Live card override: place game state and score ahead of secondary metadata. */
 UsaSportsHubPanel.prototype.liveGameCard=function(game){
   const isLive=Boolean(game?.is_live), selected=String(game?.game_id||'')===String(this.selectedLiveGame||'');
