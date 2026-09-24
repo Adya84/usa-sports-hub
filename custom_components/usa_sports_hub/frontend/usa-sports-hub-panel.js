@@ -483,6 +483,146 @@ UsaSportsHubPanel.prototype.liveGameCard=function(game){
     '<div class="live-card-foot"><span>'+esc(game?.venue||game?.status_detail||'')+'</span><b>'+ (selected?'NOW PLAYING':'OPEN GAME ›') +'</b></div></button>';
 };
 /* My Team override: team-scoped sensors are never substituted with selected-game detail. */
+
+/* MLB league pages: turn the shared sensor model into a baseball-first website. */
+UsaSportsHubPanel.prototype.mlbPageStyles=function(){
+  return '<style>'+
+  '.mlb-site{display:grid;gap:14px}.mlb-page-hero{position:relative;overflow:hidden;border:1px solid #168ed188;border-radius:14px;padding:24px;background:linear-gradient(115deg,#04182ff2,#07131ee8);box-shadow:0 14px 34px #0007}.mlb-page-hero:after{content:"MLB";position:absolute;right:20px;top:-22px;font-size:8rem;font-weight:1000;color:#ffffff08;letter-spacing:-.08em}.mlb-page-hero small{color:#57c7ff;font-weight:950;letter-spacing:.13em}.mlb-page-hero h2{margin:7px 0 3px;font-size:clamp(2rem,4vw,3.3rem)}.mlb-page-hero p{margin:0;color:#a9bdd1}.mlb-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.mlb-kpi{border:1px solid #1b6e9d;background:linear-gradient(145deg,#06192d,#03101e);border-radius:11px;padding:14px}.mlb-kpi small{display:block;color:#65cfff;font-size:.62rem;font-weight:950;letter-spacing:.08em}.mlb-kpi b{display:block;font-size:1.55rem;margin-top:4px}.mlb-kpi span{color:#8fa9c1;font-size:.7rem}.mlb-web-grid{display:grid;grid-template-columns:1.45fr .9fr;gap:14px}.mlb-web-card{border:1px solid #173d5b;background:#030c16eF;border-radius:12px;overflow:hidden;box-shadow:0 10px 28px #0006}.mlb-web-card>header{display:flex;align-items:center;justify-content:space-between;padding:12px 15px;background:linear-gradient(90deg,#072b4c,#061522);border-bottom:1px solid #1a628e}.mlb-web-card>header b{font-size:.77rem;letter-spacing:.08em}.mlb-web-card>header span{font-size:.68rem;color:#6fd2ff}.mlb-game-list{display:grid}.mlb-game-row{display:grid;grid-template-columns:105px minmax(0,1fr) 58px 44px;gap:12px;align-items:center;width:100%;border:0;border-bottom:1px solid #152535;background:transparent;color:#fff;padding:13px 15px;text-align:left;cursor:pointer}.mlb-game-row:hover{background:#0b2237}.mlb-game-row:last-child{border-bottom:0}.mlb-game-time small{display:block;color:#7790a8;font-size:.62rem}.mlb-game-time b{font-size:.75rem}.mlb-match-mini{display:grid;gap:5px}.mlb-match-mini div{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center}.mlb-match-mini img,.mlb-match-mini .live-team-logo{width:25px;height:25px}.mlb-match-mini b{font-size:.82rem}.mlb-match-mini strong{font-size:1rem}.mlb-game-state{font-size:.66rem;font-weight:950;color:#78d5ff;text-align:right}.mlb-game-open{font-size:1.3rem;color:#5cd8ff}.mlb-standings-full{overflow:auto}.mlb-standing-head,.mlb-standing-row{display:grid;grid-template-columns:36px minmax(180px,1.4fr) 46px 46px 58px 55px 62px 72px 72px;gap:7px;align-items:center;padding:10px 12px;min-width:720px}.mlb-standing-head{background:#111d27;color:#8fa5b8;font-size:.6rem;font-weight:950;letter-spacing:.06em}.mlb-standing-row{border-bottom:1px solid #142331;font-size:.76rem;cursor:pointer}.mlb-standing-row:hover{background:#0a2135}.mlb-standing-row .team{display:flex;align-items:center;gap:9px;font-weight:850}.mlb-standing-row .team img,.mlb-standing-row .team .live-team-logo{width:28px;height:28px}.mlb-standing-row .positive{color:#62e29a}.mlb-standing-row .negative{color:#ff8797}.mlb-division-title{padding:10px 12px;background:#061f36;color:#5acbff;font-weight:950;font-size:.72rem;letter-spacing:.08em}.mlb-team-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.mlb-team-tile{display:flex;align-items:center;gap:12px;border:1px solid #183c59;background:linear-gradient(135deg,#06182a,#03101c);border-radius:11px;padding:15px;color:#fff;cursor:pointer;text-align:left}.mlb-team-tile:hover{transform:translateY(-1px);border-color:#36bdf8}.mlb-team-tile img,.mlb-team-tile .live-team-logo{width:52px;height:52px}.mlb-team-tile h3{margin:0;font-size:1rem}.mlb-team-tile small{display:block;color:#90a9bf;margin-top:3px}.mlb-player-grid-pro{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.mlb-player-pro{position:relative;overflow:hidden;border:1px solid #193d59;border-radius:12px;background:linear-gradient(160deg,#09243b,#030b13);min-height:190px;padding:14px}.mlb-player-pro .mlb-player-photo,.mlb-player-pro .mlb-avatar{width:92px;height:92px;margin:auto;border-radius:50%}.mlb-player-pro h3{text-align:center;margin:10px 0 2px;font-size:.95rem}.mlb-player-pro>small{display:block;text-align:center;color:#87a1ba}.mlb-player-statline{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:11px}.mlb-player-statline span{background:#020b12;border:1px solid #ffffff12;padding:6px;text-align:center}.mlb-player-statline b,.mlb-player-statline small{display:block}.mlb-player-statline small{font-size:.54rem;color:#6f8da7}.mlb-leaders-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.mlb-leader-card-pro{display:flex;gap:10px;align-items:center;border:1px solid #193b55;background:#061522;border-radius:10px;padding:12px}.mlb-leader-card-pro .mlb-player-photo,.mlb-leader-card-pro .mlb-avatar{width:52px;height:52px}.mlb-leader-card-pro div{min-width:0}.mlb-leader-card-pro b{display:block}.mlb-leader-card-pro small{display:block;color:#8da5ba}.mlb-leader-card-pro strong{display:block;color:#5fd5ff;font-size:1.25rem}.mlb-stat-table{display:grid}.mlb-stat-table-row{display:grid;grid-template-columns:minmax(140px,1fr) minmax(90px,1fr) 100px;gap:10px;padding:11px 14px;border-bottom:1px solid #132333;align-items:center}.mlb-stat-table-row b{font-size:.82rem}.mlb-stat-table-row span{color:#91a8bb;font-size:.75rem}.mlb-stat-table-row strong{text-align:right;color:#55d1ff}.mlb-news-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.mlb-news-pro{border:1px solid #193d59;border-radius:12px;background:linear-gradient(145deg,#06192b,#030b13);padding:17px;cursor:pointer;color:#fff;text-align:left}.mlb-news-pro small{color:#59caff;font-weight:950}.mlb-news-pro h3{margin:8px 0;font-size:1.1rem}.mlb-news-pro p{margin:0;color:#9db1c4;line-height:1.45}.mlb-news-pro footer{margin-top:13px;color:#6b8398;font-size:.67rem}.mlb-empty-pro{padding:28px;text-align:center;color:#8da7bd}.mlb-team-focus{display:grid;grid-template-columns:110px 1fr auto;gap:18px;align-items:center;border:1px solid #1b5b85;border-radius:13px;padding:18px;background:linear-gradient(120deg,#082846,#03111f)}.mlb-team-focus img{width:96px;height:96px;object-fit:contain}.mlb-team-focus h2{margin:0}.mlb-team-focus p{margin:5px 0 0;color:#93abc0}.mlb-focus-record{text-align:right}.mlb-focus-record b{display:block;font-size:2rem}.mlb-focus-record small{color:#71cfff}.mlb-injury-row{display:grid;grid-template-columns:minmax(150px,1fr) 120px;gap:10px;padding:10px 13px;border-bottom:1px solid #142431}.mlb-injury-row span{color:#ff8c9c;text-align:right;font-size:.74rem}@media(max-width:1050px){.mlb-web-grid{grid-template-columns:1fr}.mlb-team-grid{grid-template-columns:repeat(2,1fr)}.mlb-player-grid-pro{grid-template-columns:repeat(3,1fr)}.mlb-leaders-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:720px){.mlb-kpis{grid-template-columns:repeat(2,1fr)}.mlb-team-grid,.mlb-player-grid-pro,.mlb-leaders-grid,.mlb-news-grid{grid-template-columns:1fr}.mlb-game-row{grid-template-columns:82px 1fr 50px 24px;padding:10px 8px}.mlb-team-focus{grid-template-columns:70px 1fr}.mlb-team-focus img{width:64px;height:64px}.mlb-focus-record{grid-column:1/-1;text-align:left}}'+
+  '</style>';
+};
+
+UsaSportsHubPanel.prototype.mlbGameRow=function(game){
+  const start=game?.start_time?new Date(game.start_time):null;
+  const validDate=start&&!Number.isNaN(start.getTime());
+  const day=validDate?new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric'}).format(start):'Game';
+  const time=validDate?new Intl.DateTimeFormat(undefined,{hour:'2-digit',minute:'2-digit'}).format(start):'';
+  const state=game?.is_live?(game.period_label||game.status_detail||'LIVE'):(game?.is_final?'FINAL':(game?.status_detail||'SCHEDULED'));
+  return '<button class="mlb-game-row" data-live-game="'+esc(game?.game_id||'')+'">'+
+    '<div class="mlb-game-time"><b>'+esc(day)+'</b><small>'+esc(time)+'</small></div>'+
+    '<div class="mlb-match-mini"><div>'+this.gameLogo(game?.away_logo,game?.away_team)+'<b>'+esc(game?.away_team||'Away')+'</b><strong>'+esc(game?.away_score??'–')+'</strong></div><div>'+this.gameLogo(game?.home_logo,game?.home_team)+'<b>'+esc(game?.home_team||'Home')+'</b><strong>'+esc(game?.home_score??'–')+'</strong></div></div>'+
+    '<div class="mlb-game-state">'+esc(state)+'</div><div class="mlb-game-open">›</div></button>';
+};
+
+UsaSportsHubPanel.prototype.mlbStandingRows=function(rows){
+  const groups={};
+  for(const row of rows){
+    const key=row.division||row.conference||'MLB';
+    (groups[key]=groups[key]||[]).push(row);
+  }
+  return Object.entries(groups).map(([group,items])=>
+    '<div class="mlb-division-title">'+esc(group)+'</div>'+
+    items.map((x,i)=>{
+      const diff=Number(x.runs_differential);
+      const diffClass=Number.isFinite(diff)?(diff>0?'positive':diff<0?'negative':''):'';
+      const pct=x.winning_percentage!==undefined&&x.winning_percentage!==null?x.winning_percentage:'–';
+      return '<div class="mlb-standing-row" data-mlb-team-id="'+esc(x.team_id||'')+'" data-mlb-team-name="'+esc(x.team||'')+'">'+
+        '<strong>'+esc(x.division_rank||x.rank||i+1)+'</strong>'+
+        '<div class="team">'+this.gameLogo(x.logo,x.team)+'<span>'+esc(x.team||'Team')+'</span></div>'+
+        '<span>'+esc(x.wins??'–')+'</span><span>'+esc(x.losses??'–')+'</span><span>'+esc(pct)+'</span><span>'+esc(x.games_back??'–')+'</span>'+
+        '<span class="'+diffClass+'">'+esc(Number.isFinite(diff)&&diff>0?'+'+diff:(x.runs_differential??'–'))+'</span>'+
+        '<span>'+esc(x.streak||'–')+'</span><span>'+esc(x.last_ten||'–')+'</span></div>';
+    }).join('')
+  ).join('');
+};
+
+UsaSportsHubPanel.prototype.mlbOverviewPage=function(s,items,sensor){
+  const live=items('live')||[], fixtures=items('fixtures')||[], results=items('results')||[], standings=items('standings')||[], news=items('news')||[];
+  const next=fixtures[0], latest=results[0];
+  const leader=standings.find(x=>Number(x.division_rank)===1)||standings[0]||{};
+  const today=[...live,...fixtures,...results].filter(game=>{
+    if(!game.start_time)return false; const d=new Date(game.start_time),n=new Date();
+    return !Number.isNaN(d.getTime())&&d.toDateString()===n.toDateString();
+  });
+  const story=news[0]||{};
+  return this.mlbPageStyles()+'<section class="mlb-site">'+
+    '<div class="mlb-page-hero"><small>MAJOR LEAGUE BASEBALL</small><h2>MLB Central</h2><p>Scores, schedules, standings, clubs and game detail in one baseball-first dashboard.</p></div>'+
+    '<div class="mlb-kpis"><div class="mlb-kpi"><small>LIVE NOW</small><b>'+live.length+'</b><span>active games</span></div><div class="mlb-kpi"><small>TODAY</small><b>'+today.length+'</b><span>games on the board</span></div><div class="mlb-kpi"><small>UPCOMING</small><b>'+fixtures.length+'</b><span>loaded fixtures</span></div><div class="mlb-kpi"><small>MLB CLUBS</small><b>'+standings.length+'</b><span>in standings feed</span></div></div>'+
+    (live.length?'<section class="mlb-web-card"><header><b>● LIVE BASEBALL</b><span>'+live.length+' game'+(live.length===1?'':'s')+'</span></header><div class="mlb-game-list">'+live.slice(0,5).map(g=>this.mlbGameRow(g)).join('')+'</div></section>':'')+
+    '<div class="mlb-web-grid"><section class="mlb-web-card"><header><b>UP NEXT</b><span>Schedule</span></header><div class="mlb-game-list">'+(fixtures.slice(0,5).map(g=>this.mlbGameRow(g)).join('')||'<div class="mlb-empty-pro">No upcoming games loaded.</div>')+'</div></section>'+
+    '<section class="mlb-web-card"><header><b>LEAGUE SNAPSHOT</b><span>MLB</span></header><div style="padding:17px">'+
+      (leader.team?'<div style="display:flex;align-items:center;gap:12px">'+this.gameLogo(leader.logo,leader.team)+'<div><small style="color:#6ccfff">TOP OF DIVISION</small><h3 style="margin:3px 0">'+esc(leader.team)+'</h3><span style="color:#91a8bc">'+esc([leader.record,leader.division].filter(Boolean).join(' · '))+'</span></div></div>':'<div class="mlb-empty-pro">Standings loading.</div>')+
+      (latest?'<div style="margin-top:18px;padding-top:14px;border-top:1px solid #173044"><small style="color:#6ccfff">LATEST FINAL</small><b style="display:block;margin-top:5px">'+esc((latest.away_team||'')+' '+(latest.away_score??'–')+' · '+(latest.home_score??'–')+' '+(latest.home_team||''))+'</b></div>':'')+
+      (story.title?'<div style="margin-top:18px;padding-top:14px;border-top:1px solid #173044"><small style="color:#6ccfff">TOP STORY</small><b style="display:block;margin-top:5px">'+esc(story.title)+'</b><span style="display:block;color:#91a8bc;margin-top:5px">'+esc(story.summary||'')+'</span></div>':'')+
+    '</div></section></div>'+
+    '<section class="mlb-web-card"><header><b>STANDINGS QUICK VIEW</b><span>Top clubs</span></header><div class="mlb-standings-full"><div class="mlb-standing-head"><span>#</span><span>TEAM</span><span>W</span><span>L</span><span>PCT</span><span>GB</span><span>DIFF</span><span>STRK</span><span>L10</span></div>'+this.mlbStandingRows(standings.slice(0,15))+'</div></section>'+
+  '</section>';
+};
+
+UsaSportsHubPanel.prototype.mlbDataPage=function(s,tab,items,sensor,entity,score){
+  const fixtures=items('fixtures')||[],results=items('results')||[],standings=items('standings')||[],news=items('news')||[];
+  const teams=entity?.attributes?.teams||[];
+  const profile=sensor('team_profile')?.attributes?.team_profile||{};
+  const squad=sensor('team_squad')?.attributes?.team_squad||[];
+  const teamStats=sensor('team_statistics')?.attributes?.team_statistics||[];
+  const teamLeaders=sensor('team_leaders')?.attributes?.team_leaders||[];
+  const teamInjuries=sensor('team_injuries')?.attributes?.team_injuries||[];
+  const gamePlayers=items('players')||[],gameStats=items('statistics')||[],lineups=items('lineups')||[];
+  const shell=(title,sub,body)=>this.mlbPageStyles()+'<section class="mlb-site"><div class="mlb-page-hero"><small>USA SPORTS HUB · MLB</small><h2>'+title+'</h2><p>'+sub+'</p></div>'+body+'</section>';
+
+  if(tab==='Fixtures'||tab==='Results'){
+    const games=tab==='Fixtures'?fixtures:results;
+    const title=tab==='Fixtures'?'MLB Schedule':'MLB Results';
+    const sub=tab==='Fixtures'?'Upcoming games with local start times. Open any matchup for the full Game Centre.':'Final scores and completed matchups. Every result can be opened for detailed game data.';
+    const body='<div class="mlb-kpis"><div class="mlb-kpi"><small>'+tab.toUpperCase()+'</small><b>'+games.length+'</b><span>games loaded</span></div><div class="mlb-kpi"><small>TEAMS</small><b>'+teams.length+'</b><span>MLB clubs</span></div><div class="mlb-kpi"><small>LIVE</small><b>'+(items('live')||[]).length+'</b><span>right now</span></div><div class="mlb-kpi"><small>STORIES</small><b>'+news.length+'</b><span>game previews & recaps</span></div></div>'+
+      '<section class="mlb-web-card"><header><b>'+tab.toUpperCase()+'</b><span>Open a game ›</span></header><div class="mlb-game-list">'+(games.map(g=>this.mlbGameRow(g)).join('')||'<div class="mlb-empty-pro">No '+tab.toLowerCase()+' available.</div>')+'</div></section>';
+    return shell(title,sub,body);
+  }
+
+  if(tab==='Standings'){
+    const body='<div class="mlb-kpis"><div class="mlb-kpi"><small>CLUBS</small><b>'+standings.length+'</b><span>standings rows</span></div><div class="mlb-kpi"><small>DIVISIONS</small><b>'+new Set(standings.map(x=>x.division).filter(Boolean)).size+'</b><span>loaded</span></div><div class="mlb-kpi"><small>PLAYOFF CLINCHED</small><b>'+standings.filter(x=>x.clinched_playoffs).length+'</b><span>clubs</span></div><div class="mlb-kpi"><small>DIVISION CLINCHED</small><b>'+standings.filter(x=>x.clinched_division).length+'</b><span>clubs</span></div></div>'+
+      '<section class="mlb-web-card"><header><b>MLB STANDINGS</b><span>W · L · PCT · GB · DIFF · STRK · L10</span></header><div class="mlb-standings-full"><div class="mlb-standing-head"><span>#</span><span>TEAM</span><span>W</span><span>L</span><span>PCT</span><span>GB</span><span>DIFF</span><span>STRK</span><span>L10</span></div>'+this.mlbStandingRows(standings)+'</div></section>';
+    return shell('MLB Standings','Division-by-division baseball standings with record, games back, run differential, streak and last ten.',body);
+  }
+
+  if(tab==='Teams'){
+    const tiles=teams.map(x=>'<button class="mlb-team-tile" data-mlb-team-id="'+esc(x.id||'')+'" data-mlb-team-name="'+esc(x.name||'')+'">'+this.gameLogo(x.logo,x.name)+'<div><h3>'+esc(x.name||'Team')+'</h3><small>'+esc([x.abbreviation,x.location,x.division].filter(Boolean).join(' · '))+'</small></div></button>').join('');
+    return shell('MLB Teams','Browse every club in the league. Open a team to load its roster, leaders, statistics, injuries and schedule.','<div class="mlb-kpis"><div class="mlb-kpi"><small>MLB CLUBS</small><b>'+teams.length+'</b><span>available</span></div><div class="mlb-kpi"><small>USA</small><b>'+teams.filter(x=>x.country==='usa').length+'</b><span>clubs</span></div><div class="mlb-kpi"><small>CANADA</small><b>'+teams.filter(x=>x.country==='canada').length+'</b><span>clubs</span></div><div class="mlb-kpi"><small>SELECTED</small><b>'+esc(profile.abbreviation||'—')+'</b><span>'+esc(profile.name||'choose a club')+'</span></div></div><div class="mlb-team-grid">'+(tiles||'<div class="mlb-empty-pro">Team data is loading.</div>')+'</div>');
+  }
+
+  if(tab==='Players'){
+    const source=squad.length?squad:(gamePlayers.length?gamePlayers:lineups);
+    const cards=source.slice(0,80).map(player=>{
+      const ss=player.season_stats&&typeof player.season_stats==='object'?player.season_stats:{};
+      const vals=Object.entries(ss).filter(([,v])=>v!==null&&v!==undefined&&typeof v!=='object').slice(0,3);
+      return '<article class="mlb-player-pro">'+this.mlbPlayerPhoto(player,'roster')+'<h3>'+esc(player.name||player.full_name||'Player')+'</h3><small>'+esc([player.position_abbreviation||player.position,player.number?'#'+player.number:''].filter(Boolean).join(' · '))+'</small>'+
+        (vals.length?'<div class="mlb-player-statline">'+vals.map(([k,v])=>'<span><b>'+esc(v)+'</b><small>'+esc(this.prettyKey(k))+'</small></span>').join('')+'</div>':'')+'</article>';
+    }).join('');
+    const context=profile.name?'Showing the current '+profile.name+' roster and available season numbers.':'Choose a team above for the full roster. Until then, players from the currently loaded game are shown when available.';
+    return shell('MLB Players',context,'<div class="mlb-kpis"><div class="mlb-kpi"><small>ROSTER</small><b>'+source.length+'</b><span>players shown</span></div><div class="mlb-kpi"><small>TEAM</small><b>'+esc(profile.abbreviation||'—')+'</b><span>'+esc(profile.name||'not selected')+'</span></div><div class="mlb-kpi"><small>LEADERS</small><b>'+teamLeaders.length+'</b><span>team leaders</span></div><div class="mlb-kpi"><small>INJURIES</small><b>'+teamInjuries.length+'</b><span>reported</span></div></div><div class="mlb-player-grid-pro">'+(cards||'<div class="mlb-empty-pro">Choose an MLB team to load its player roster.</div>')+'</div>');
+  }
+
+  if(tab==='Stats'){
+    const leaderCards=teamLeaders.slice(0,12).map(row=>'<article class="mlb-leader-card-pro">'+this.mlbPlayerPhoto(row,'small')+'<div><small>'+esc(row.label||'TEAM LEADER')+'</small><b>'+esc(row.player_name||row.name||'Player')+'</b><strong>'+esc(row.value||'—')+'</strong></div></article>').join('');
+    const source=teamStats.length?teamStats:gameStats;
+    const rows=source.slice(0,80).map(row=>'<div class="mlb-stat-table-row"><b>'+esc(row.player_name||row.full_name||row.name||'Statistic')+'</b><span>'+esc(row.label||row.group||row.position_abbreviation||'MLB')+'</span><strong>'+esc(row.value!==undefined&&row.value!==''?row.value:this.itemValue(row)||'—')+'</strong></div>').join('');
+    return shell('MLB Statistics','Team leaders and available baseball statistics presented as a proper stats centre. Select a club to switch this page to team-scoped season data.','<div class="mlb-kpis"><div class="mlb-kpi"><small>STAT ROWS</small><b>'+source.length+'</b><span>available</span></div><div class="mlb-kpi"><small>LEADERS</small><b>'+teamLeaders.length+'</b><span>team leaders</span></div><div class="mlb-kpi"><small>TEAM</small><b>'+esc(profile.abbreviation||'—')+'</b><span>'+esc(profile.name||'game data')+'</span></div><div class="mlb-kpi"><small>INJURIES</small><b>'+teamInjuries.length+'</b><span>reported</span></div></div>'+
+      (leaderCards?'<section class="mlb-web-card"><header><b>TEAM LEADERS</b><span>'+esc(profile.name||'Selected team')+'</span></header><div class="mlb-leaders-grid" style="padding:12px">'+leaderCards+'</div></section>':'')+
+      '<section class="mlb-web-card"><header><b>STATISTICS</b><span>'+esc(profile.name||'Current game')+'</span></header><div class="mlb-stat-table">'+(rows||'<div class="mlb-empty-pro">Choose a team or open a game to load statistics.</div>')+'</div></section>');
+  }
+
+  if(tab==='News'){
+    const cards=news.map(row=>'<button class="mlb-news-pro" '+(row.game_id?'data-live-game="'+esc(row.game_id)+'"':'')+'><small>'+esc(String(row.kind||'UPDATE').toUpperCase())+'</small><h3>'+esc(row.title||'MLB update')+'</h3><p>'+esc(row.summary||'Game preview or recap information.')+'</p><footer>'+esc(row.published||'')+(row.game_id?' · OPEN GAME ›':'')+'</footer></button>').join('');
+    return shell('MLB News & Game Stories','Game previews and recaps from the current MLB feed, connected directly to the relevant Game Centre.','<div class="mlb-kpis"><div class="mlb-kpi"><small>STORIES</small><b>'+news.length+'</b><span>loaded</span></div><div class="mlb-kpi"><small>PREVIEWS</small><b>'+news.filter(x=>x.kind==='preview').length+'</b><span>upcoming</span></div><div class="mlb-kpi"><small>RECAPS</small><b>'+news.filter(x=>x.kind==='recap').length+'</b><span>completed games</span></div><div class="mlb-kpi"><small>LIVE</small><b>'+(items('live')||[]).length+'</b><span>games now</span></div></div><div class="mlb-news-grid">'+(cards||'<div class="mlb-empty-pro">No MLB stories are available in the current feed.</div>')+'</div>');
+  }
+
+  if(tab==='My Team'){
+    const teamId=String(profile.team_id||'');
+    const games=[...(items('live')||[]),...fixtures,...results].filter((g,i,a)=>a.findIndex(x=>String(x.game_id)===String(g.game_id))===i).filter(g=>String(g.home_team_id||'')===teamId||String(g.away_team_id||'')===teamId||g.home_team===profile.name||g.away_team===profile.name);
+    const standing=profile.standing||standings.find(x=>String(x.team_id||'')===teamId)||{};
+    const roster=squad.slice(0,18).map(player=>'<article class="mlb-leader-card-pro">'+this.mlbPlayerPhoto(player,'small')+'<div><b>'+esc(player.name||'Player')+'</b><small>'+esc([player.position_abbreviation||player.position,player.number?'#'+player.number:''].filter(Boolean).join(' · '))+'</small></div></article>').join('');
+    const leaders=teamLeaders.slice(0,8).map(row=>'<article class="mlb-leader-card-pro">'+this.mlbPlayerPhoto(row,'small')+'<div><small>'+esc(row.label||'LEADER')+'</small><b>'+esc(row.player_name||row.name||'Player')+'</b><strong>'+esc(row.value||'—')+'</strong></div></article>').join('');
+    const injuries=teamInjuries.slice(0,20).map(row=>'<div class="mlb-injury-row"><b>'+esc(row.player_name||row.name||'Player')+'</b><span>'+esc(row.status||row.injury||'Injury report')+'</span></div>').join('');
+    if(!teamId)return shell('My MLB Team','Select a team from the top selector or from the Teams/Standings pages to build your club dashboard.','<div class="mlb-empty-pro">Choose an MLB team to load its complete team hub.</div>');
+    return shell(esc(profile.name||'My MLB Team'),'Your club dashboard with record, schedule, roster, leaders and injury report.','<div class="mlb-team-focus">'+(profile.logo?'<img src="'+esc(profile.logo)+'" alt="">':'')+'<div><small style="color:#62cfff">MY MLB TEAM</small><h2>'+esc(profile.name||'Team')+'</h2><p>'+esc([profile.location,profile.division].filter(Boolean).join(' · '))+'</p></div><div class="mlb-focus-record"><b>'+esc(standing.short_record||standing.record||'—')+'</b><small>'+esc(standing.formatted_rank||standing.division||'Season record')+'</small></div></div>'+
+      '<div class="mlb-web-grid"><section class="mlb-web-card"><header><b>SCHEDULE & RESULTS</b><span>'+games.length+' games loaded</span></header><div class="mlb-game-list">'+(games.slice(0,10).map(g=>this.mlbGameRow(g)).join('')||'<div class="mlb-empty-pro">No team games loaded.</div>')+'</div></section><section class="mlb-web-card"><header><b>SEASON SNAPSHOT</b><span>'+esc(profile.abbreviation||'')+'</span></header><div class="mlb-stat-table">'+[['Record',standing.short_record||standing.record],['Rank',standing.formatted_rank||standing.place],['Streak',standing.streak],['Last 10',standing.last_ten_games_record||standing.last_ten],['Home',standing.short_home_record||standing.home_record],['Away',standing.short_away_record||standing.away_record]].filter(([,v])=>v).map(([k,v])=>'<div class="mlb-stat-table-row"><b>'+k+'</b><span></span><strong>'+esc(v)+'</strong></div>').join('')+'</div></section></div>'+
+      (leaders?'<section class="mlb-web-card"><header><b>TEAM LEADERS</b><span>Season</span></header><div class="mlb-leaders-grid" style="padding:12px">'+leaders+'</div></section>':'')+
+      '<section class="mlb-web-card"><header><b>ROSTER</b><span>'+squad.length+' players</span></header><div class="mlb-leaders-grid" style="padding:12px">'+(roster||'<div class="mlb-empty-pro">Roster loading.</div>')+'</div></section>'+
+      '<section class="mlb-web-card"><header><b>INJURY REPORT</b><span>'+teamInjuries.length+' listed</span></header>'+(injuries||'<div class="mlb-empty-pro">No published injuries.</div>')+'</section>');
+  }
+
+  return '';
+};
+
 const usaBaseDataPage=UsaSportsHubPanel.prototype.dataPage;
 const usaBaseRender=UsaSportsHubPanel.prototype.render;
 const usaBaseSelectTeam=UsaSportsHubPanel.prototype.selectTeam;
@@ -494,6 +634,7 @@ UsaSportsHubPanel.prototype.selectTeam=function(team){
   this.render();
 };
 UsaSportsHubPanel.prototype.dataPage=function(s,tab,items,sensor,entity,score){
+  if(this.sport==='mlb')return this.mlbDataPage(s,tab,items,sensor,entity,score);
   if(tab!=='My Team')return usaBaseDataPage.call(this,s,tab,items,sensor,entity,score);
   const profile=sensor('team_profile')?.attributes?.team_profile||{};
   const squad=sensor('team_squad')?.attributes?.team_squad||[];
@@ -516,10 +657,25 @@ UsaSportsHubPanel.prototype.dataPage=function(s,tab,items,sensor,entity,score){
 };
 UsaSportsHubPanel.prototype.render=function(){
   usaBaseRender.call(this);
+  if(this.sport==='mlb'&&this.tab==='Overview'&&!this.selectedLiveGame){
+    const content=this.shadowRoot.querySelector('.content');
+    const notice=content?.querySelector('.notice');
+    if(content){
+      const sensor=section=>this._hass?.states?.[`sensor.usa_sports_hub_mlb_${section}`];
+      const items=section=>sensor(section)?.attributes?.[section]||[];
+      const html=this.mlbOverviewPage(SPORTS.mlb,items,sensor);
+      [...content.children].filter(node=>node!==notice).forEach(node=>node.remove());
+      content.insertAdjacentHTML('beforeend',html);
+    }
+  }
   if(!this.shadowRoot.querySelector('#usa-team-button-style')){const style=document.createElement('style');style.id='usa-team-button-style';style.textContent='.my-team-shell .my-action,.my-team-shell .my-favourite{border-radius:6px!important;border:1px solid #13b9f5!important;background:linear-gradient(135deg,#082b4a,#041a30)!important;box-shadow:inset 0 1px #ffffff22,0 4px 14px #0007;color:#f7fbff!important;text-transform:uppercase;letter-spacing:.04em}.my-team-shell .my-action{background:linear-gradient(135deg,#e21b3c,#a70926)!important;border-color:#ffced7!important}.my-team-shell .my-favourite:hover,.my-team-shell .my-action:hover{transform:translateY(-1px);filter:brightness(1.18);box-shadow:0 0 16px #16c7ff66}';this.shadowRoot.append(style);}
   const teamTitle=this.shadowRoot.querySelector('.my-title');if(teamTitle&&!teamTitle.querySelector('.team-load-note'))teamTitle.insertAdjacentHTML('beforeend','<small class="team-load-note" style="display:block;margin-top:10px;color:#7fcdf4">Team details refresh in the background and can take up to 30 seconds to populate.</small>');
   this.shadowRoot.querySelectorAll('[data-add-favourite]').forEach(button=>button.addEventListener('click',()=>this._hass?.callService('usa_sports_hub','add_team_favourite',{sport:this.sport,team_id:button.dataset.addFavourite,team:this.team}).catch(err=>console.warn(err))));
   this.shadowRoot.querySelectorAll('[data-remove-favourite]').forEach(button=>button.addEventListener('click',()=>this._hass?.callService('usa_sports_hub','remove_team_favourite',{sport:this.sport,team_id:button.dataset.removeFavourite}).catch(err=>console.warn(err))));
   this.shadowRoot.querySelectorAll('[data-open-favourite]').forEach(button=>button.addEventListener('click',()=>{const [sport,teamId]=button.dataset.openFavourite.split('|');this.selectSport(sport);const row=this._hass?.states?.[`sensor.usa_sports_hub_${sport}_teams`]?.attributes?.teams?.find(item=>String(item.id)===teamId);this.team=row?.name||'';this._hass?.callService('usa_sports_hub','select_team',{sport,team_id:teamId}).catch(err=>console.warn(err));this.tab='My Team';this.render();}));
+  if(this.sport==='mlb'){
+    this.shadowRoot.querySelectorAll('[data-live-game]').forEach(button=>{if(!button.dataset.mlbBound){button.dataset.mlbBound='1';button.addEventListener('click',()=>this.openLiveGame(button.dataset.liveGame));}});
+    this.shadowRoot.querySelectorAll('[data-mlb-team-id]').forEach(button=>button.addEventListener('click',()=>{const teamId=button.dataset.mlbTeamId,teamName=button.dataset.mlbTeamName||'';if(!teamId)return;this.team=teamName;localStorage.setItem('usa_sports_hub_team',teamName);this.tab='My Team';localStorage.setItem('usa_sports_hub_mlb_tab','My Team');this._hass?.callService('usa_sports_hub','select_team',{sport:'mlb',team_id:teamId}).catch(err=>console.warn(err));this.render();}));
+  }
 };
 customElements.define('usa-sports-hub-panel',UsaSportsHubPanel);
