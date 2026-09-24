@@ -404,8 +404,12 @@ class UsaSportsHubPanel extends HTMLElement {
 /* MLB guard: never show a generic roster or 0-0 count as selected-game data. */
 UsaSportsHubPanel.prototype.mlbPlayerPhoto=function(player,sizeClass){
   const id=player?.id||player?.player_id||player?.person?.id||'';
-  const url=player?.headshot||player?.image||player?.headshot_url||
-    (id?`https://img.mlbstatic.com/mlb-photos/image/upload/w_213,q_auto:best/v1/people/${encodeURIComponent(id)}/headshot/67/current.png`:'');
+  // MLB's player-id image route is reliable across the live feed and final
+  // box-score payloads. Prefer it over legacy provider headshot URLs, which
+  // can return a fallback or fail to render in the Home Assistant panel.
+  const url=id
+    ? `https://img.mlbstatic.com/mlb-photos/image/upload/w_213,q_auto:best/v1/people/${encodeURIComponent(id)}/headshot/67/current.png`
+    : (player?.headshot||player?.image||player?.headshot_url||'');
   const name=player?.full_name||player?.player_name||player?.name||'Player';
   return url
     ? '<img class="mlb-player-photo '+esc(sizeClass||'')+'" src="'+esc(url)+'" alt="'+esc(name)+'" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'"><span class="mlb-avatar '+esc(sizeClass||'')+'" style="display:none">'+esc(String(name||'?').charAt(0))+'</span>'
