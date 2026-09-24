@@ -152,6 +152,11 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
                 "injuries": detail.get("injuries") or [],
                 "lineups": detail.get("lineups") or [],
                 "statistics": detail.get("statistics") or [],
+                "leaders": detail.get("leaders") or [],
+                "periods": detail.get("periods") or [],
+                "officials": detail.get("officials") or [],
+                "situations": detail.get("situations") or [],
+                "related": detail.get("related") or [],
                 "odds": detail.get("odds") or {},
                 "stadium": detail.get("stadium") or {},
             }
