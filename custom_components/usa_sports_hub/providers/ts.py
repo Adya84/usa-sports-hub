@@ -498,15 +498,33 @@ class TSProvider(ProviderClient):
             current_batter = matchup.get("batter") if isinstance(matchup.get("batter"), dict) else {}
             current_pitcher = matchup.get("pitcher") if isinstance(matchup.get("pitcher"), dict) else {}
 
+            batter_obj = offense.get("batter") if isinstance(offense.get("batter"), dict) else {}
+            pitcher_obj = defense.get("pitcher") if isinstance(defense.get("pitcher"), dict) else {}
+
+            # Some live responses only include the player id in linescore/currentPlay.
+            # Resolve that id against gameData.players so the UI still gets names.
+            game_players = mlb_game_data.get("players") if isinstance(mlb_game_data.get("players"), dict) else {}
+            def _mlb_person_name(obj: dict[str, Any]) -> str | None:
+                if not isinstance(obj, dict):
+                    return None
+                direct = obj.get("fullName") or obj.get("name")
+                if direct:
+                    return str(direct)
+                player_id = obj.get("id")
+                if player_id is None:
+                    return None
+                person = game_players.get(f"ID{player_id}") or game_players.get(str(player_id)) or {}
+                if isinstance(person, dict):
+                    return person.get("fullName") or person.get("name")
+                return None
+
             batter_name = (
-                ((offense.get("batter") or {}).get("fullName") if isinstance(offense.get("batter"), dict) else None)
-                or current_batter.get("fullName")
-                or current_batter.get("name")
+                _mlb_person_name(batter_obj)
+                or _mlb_person_name(current_batter)
             )
             pitcher_name = (
-                ((defense.get("pitcher") or {}).get("fullName") if isinstance(defense.get("pitcher"), dict) else None)
-                or current_pitcher.get("fullName")
-                or current_pitcher.get("name")
+                _mlb_person_name(pitcher_obj)
+                or _mlb_person_name(current_pitcher)
             )
 
             current_situation = {
