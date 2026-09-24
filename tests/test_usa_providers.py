@@ -14,9 +14,39 @@ SPEC.loader.exec_module(models)
 normalize_event = models.normalize_ts_event
 normalize_standing = models.normalize_ts_standing
 compact_news = models.compact_ts_news
+normalize_team_detail = models.normalize_ts_team_detail
 
 
 class ProviderModelTests(unittest.TestCase):
+    def test_team_detail_normalizes_profile_and_squad(self):
+        detail = normalize_team_detail(
+            "mlb",
+            {
+                "id": 11,
+                "full_name": "Los Angeles Angels",
+                "standing": {"short_record": "60-98"},
+                "logos": {"small": "team.png"},
+                "team_extra_info": [{"label": "Park", "value": "Angel Stadium"}],
+            },
+            [{
+                "id": 7,
+                "full_name": "Player One",
+                "number": 9,
+                "position_abbreviation": "OF",
+                "headshots": {"small": "player.png"},
+                "injury": {"status": "Day-to-day"},
+                "season_stats": {"home_runs": 20},
+            }],
+            [{"name": "Runs", "value": 4}],
+            [{"name": "Top hitter", "value": "Player One"}],
+            None,
+        )
+        self.assertEqual(detail["profile"]["team_id"], "11")
+        self.assertEqual(detail["profile"]["logo"], "team.png")
+        self.assertEqual(detail["squad"][0]["headshot"], "player.png")
+        self.assertEqual(detail["squad"][0]["season_stats"]["home_runs"], 20)
+        self.assertEqual(detail["injuries"], [])
+
     def test_mlb_detail_does_not_make_unscoped_fallback_requests(self):
         source = Path("custom_components/usa_sports_hub/providers/ts.py").read_text(encoding="utf-8")
 

@@ -34,6 +34,68 @@ def normalize_ts_team(team: dict[str, Any]) -> dict[str, Any]:
         "Toronto", "Vancouver", "Montreal", "Montréal", "Ottawa",
         "Calgary", "Edmonton", "Winnipeg",
     }
+
+
+def _team_collection(value: Any) -> list[dict[str, Any]]:
+    """Return only provider rows that are safe to expose as compact data."""
+    return [row for row in value if isinstance(row, dict)] if isinstance(value, list) else []
+
+
+def _team_headshot(player: dict[str, Any]) -> str | None:
+    headshots = player.get("headshots") if isinstance(player.get("headshots"), dict) else {}
+    return (
+        headshots.get("w192xh192")
+        or headshots.get("small")
+        or headshots.get("large")
+        or player.get("headshot")
+    )
+
+
+def normalize_ts_team_detail(
+    league: str,
+    profile: Any,
+    squad: Any,
+    statistics: Any,
+    leaders: Any,
+    injuries: Any,
+) -> dict[str, Any]:
+    """Normalize one team's dedicated TS endpoints into stable panel data."""
+    profile = profile if isinstance(profile, dict) else {}
+    standing = profile.get("standing") if isinstance(profile.get("standing"), dict) else {}
+    compact_squad = []
+    for player in _team_collection(squad):
+        compact_squad.append(
+            {
+                "player_id": str(player.get("id") or ""),
+                "name": player.get("full_name") or player.get("first_initial_and_last_name") or "Player",
+                "number": player.get("number"),
+                "position": player.get("position") or player.get("position_abbreviation") or "",
+                "position_abbreviation": player.get("position_abbreviation") or "",
+                "headshot": _team_headshot(player),
+                "injury": player.get("injury") if isinstance(player.get("injury"), dict) else None,
+                "season_stats": player.get("season_stats") if isinstance(player.get("season_stats"), dict) else {},
+            }
+        )
+    return {
+        "profile": {
+            "team_id": str(profile.get("id") or ""),
+            "name": profile.get("full_name") or profile.get("name") or "Team",
+            "abbreviation": profile.get("abbreviation") or profile.get("short_name") or "",
+            "logo": _logo(profile),
+            "conference": profile.get("conference"),
+            "division": profile.get("division"),
+            "location": profile.get("location"),
+            "colour_1": profile.get("colour_1"),
+            "colour_2": profile.get("colour_2"),
+            "standing": standing,
+            "extra": _team_collection(profile.get("team_extra_info")),
+        },
+        "squad": compact_squad,
+        "statistics": _team_collection(statistics),
+        "leaders": _team_collection(leaders),
+        "injuries": _team_collection(injuries),
+        "league": league.upper(),
+    }
     return {
         "id": str(team.get("id") or ""),
         "name": team.get("full_name") or team.get("name") or "Team",
