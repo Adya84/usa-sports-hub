@@ -19,7 +19,7 @@ API_BASE = "https://api." + "the" + "score.com"
 WEB_API_BASE = "https://www." + "the" + "score.com/api"
 MLB_STATS_BASE = "https://statsapi.mlb.com/api/v1"
 MLB_LIVE_BASE = "https://statsapi.mlb.com/api/v1.1"
-MLB_HEADSHOT_BASE = "https://img.mlbstatic.com/mlb-photos/image/upload/w_180,q_auto:best/v1/people"
+MLB_HEADSHOT_BASE = "https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people"
 
 
 def _walk(value: Any):
@@ -539,21 +539,59 @@ class TSProvider(ProviderClient):
                 or _mlb_person_name(current_pitcher)
             )
 
+            # Prefer currentPlay for count/inning because it changes on every
+            # pitch; linescore can lag slightly between at-bats.
+            current_count = current_play.get("count") if isinstance(current_play.get("count"), dict) else {}
+            current_about = current_play.get("about") if isinstance(current_play.get("about"), dict) else {}
+
+            batter_id = batter_obj.get("id") or current_batter.get("id")
+            pitcher_id = pitcher_obj.get("id") or current_pitcher.get("id")
+
+            # linescore.offense is authoritative for occupied bases. If a feed
+            # omits one of those fields, reconstruct the current bases from the
+            # runner movements in currentPlay.
+            first_base = bool(offense.get("first") or offense.get("firstBase"))
+            second_base = bool(offense.get("second") or offense.get("secondBase"))
+            third_base = bool(offense.get("third") or offense.get("thirdBase"))
+            if not (first_base or second_base or third_base):
+                runner_rows = current_play.get("runners") if isinstance(current_play.get("runners"), list) else []
+                occupied: set[str] = set()
+                for runner in runner_rows:
+                    if not isinstance(runner, dict):
+                        continue
+                    movement = runner.get("movement") if isinstance(runner.get("movement"), dict) else {}
+                    end = str(movement.get("end") or "").lower()
+                    if movement.get("isOut"):
+                        continue
+                    if end in {"1b", "first", "first base"}:
+                        occupied.add("1b")
+                    elif end in {"2b", "second", "second base"}:
+                        occupied.add("2b")
+                    elif end in {"3b", "third", "third base"}:
+                        occupied.add("3b")
+                first_base = "1b" in occupied
+                second_base = "2b" in occupied
+                third_base = "3b" in occupied
+
             current_situation = {
                 "name": "Current game situation",
-                "inning": linescore.get("currentInning"),
-                "inning_state": linescore.get("inningState"),
+                "inning": current_about.get("inning") or linescore.get("currentInning"),
+                "inning_state": current_about.get("halfInning") or linescore.get("inningState"),
                 "inning_ordinal": linescore.get("currentInningOrdinal"),
-                "balls": linescore.get("balls"),
-                "strikes": linescore.get("strikes"),
-                "outs": linescore.get("outs"),
+                "balls": current_count.get("balls") if current_count.get("balls") is not None else linescore.get("balls"),
+                "strikes": current_count.get("strikes") if current_count.get("strikes") is not None else linescore.get("strikes"),
+                "outs": current_count.get("outs") if current_count.get("outs") is not None else linescore.get("outs"),
                 "batter": batter_name,
                 "pitcher": pitcher_name,
-                "first_base": bool(offense.get("first")),
-                "second_base": bool(offense.get("second")),
-                "third_base": bool(offense.get("third")),
+                "batter_id": str(batter_id or ""),
+                "pitcher_id": str(pitcher_id or ""),
+                "batter_headshot": f"{MLB_HEADSHOT_BASE}/{batter_id}/headshot/67/current" if batter_id else None,
+                "pitcher_headshot": f"{MLB_HEADSHOT_BASE}/{pitcher_id}/headshot/67/current" if pitcher_id else None,
+                "first_base": first_base,
+                "second_base": second_base,
+                "third_base": third_base,
             }
-            detail["situations"] = [current_situation] + detail["situations"]
+            detail["situations"] = [current_situation]
 
 
         # For MLB, replace generic recursive matches with a clean, game-specific
@@ -601,7 +639,7 @@ class TSProvider(ProviderClient):
                         "jersey_number": player.get("jerseyNumber"),
                         "batting_order": player.get("battingOrder"),
                         "game_status": player.get("gameStatus"),
-                        "headshot": f"{MLB_HEADSHOT_BASE}/{player_id}/headshot/silo/current" if player_id else None,
+                        "headshot": f"{MLB_HEADSHOT_BASE}/{player_id}/headshot/67/current" if player_id else None,
                     }
                     clean_players.append(base)
 
@@ -680,7 +718,7 @@ class TSProvider(ProviderClient):
                         "rbi": result.get("rbi"),
                         "player_id": scoring_player_id,
                         "player_name": batter.get("fullName") or batter.get("name"),
-                        "headshot": f"{MLB_HEADSHOT_BASE}/{scoring_player_id}/headshot/silo/current" if scoring_player_id else None,
+                        "headshot": f"{MLB_HEADSHOT_BASE}/{scoring_player_id}/headshot/67/current" if scoring_player_id else None,
                     }
                 )
             detail["scoring"] = clean_scoring
