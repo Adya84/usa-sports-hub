@@ -125,4 +125,4 @@ You can also support the project by starring the repository and reporting issues
 
 ## Disclaimer
 
-USA Sports Hub is an independent Home Assistant integration. It is not affiliated with, endorsed by, or sponsored by Home Assistant, HACS, ESPN, MLB, NHL, NBA, NFL, MLS, or any other league, team, broadcaster, or data provider. Team names, league names, and logos remain the property of their respective owners.
+USA Sports Hub is an independent Home Assistant integration. It is not affiliated with, endorsed by, or sponsored by Home Assistant, HACS, theScore, MLB, NHL, NBA, NFL, MLS, or any other league, team, broadcaster, or data provider. Team names, league names, and logos remain the property of their respective owners.

@@ -1,2 +1,1 @@
-"""Public sports data providers for USA Sports Hub."""
-
+"""theScore sports data provider package for USA Sports Hub."""

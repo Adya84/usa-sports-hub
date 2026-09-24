@@ -94,11 +94,13 @@ class TheScoreProvider(ProviderClient):
         payload = await self.async_get_json(f"{self.base}/standings")
         if not isinstance(payload, list):
             return []
-        return [
-            normalize_the_score_standing(item, self.league)
-            for item in payload
-            if isinstance(item, dict)
-        ]
+        rows = [item for item in payload if isinstance(item, dict)]
+        season_types = {str(item.get("season_type") or "").lower() for item in rows}
+        if "regular" in season_types:
+            rows = [item for item in rows if str(item.get("season_type") or "").lower() == "regular"]
+        elif "pre" in season_types:
+            rows = [item for item in rows if str(item.get("season_type") or "").lower() == "pre"]
+        return [normalize_the_score_standing(item, self.league) for item in rows]
 
     async def async_news(self) -> list[dict[str, Any]]:
         # theScore event payloads expose preview/recap metadata.  This keeps the
