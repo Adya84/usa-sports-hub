@@ -49,3 +49,24 @@ class IntegrationIdentityTests(unittest.TestCase):
         selection = source[source.index("async def async_select_team"):source.index("async def async_add_team_favourite")]
         self.assertIn("async_create_task", selection)
         self.assertIn("_async_refresh_team", selection)
+
+    def test_only_supported_runtime_services_are_registered(self):
+        setup = Path("custom_components/usa_sports_hub/__init__.py").read_text(encoding="utf-8")
+        for active in (
+            '"select_live_match":',
+            '"select_team":',
+            '"add_team_favourite":',
+            '"remove_team_favourite":',
+            '"refresh":',
+        ):
+            self.assertIn(active, setup)
+
+        for obsolete in (
+            '"select_live_team":',
+            '"select_competition":',
+            '"select_cup":',
+            '"select_my_club":',
+            '"remove_favourite_club":',
+            '"save_ui_preferences":',
+        ):
+            self.assertNotIn(obsolete, setup)
