@@ -1,4 +1,4 @@
-"""Coordinator for the USA Sports Hub CG provider set."""
+"""Coordinator for the USA Sports Hub TS provider set."""
 from __future__ import annotations
 
 import asyncio
@@ -9,14 +9,14 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .providers.base import ProviderError
-from .providers.cg import MlbProvider, NbaProvider, NflProvider, NhlProvider
+from .providers.ts import MlbProvider, NbaProvider, NflProvider, NhlProvider
 
 _LOGGER = logging.getLogger(__name__)
-SPORCG = ("nfl", "nba", "mlb", "nhl")
+SPORTS = ("nfl", "nba", "mlb", "nhl")
 
 
 class UsaSportsCoordinator(DataUpdateCoordinator):
-    """Refresh CG independently for each sport and retain last good data."""
+    """Refresh TS independently for each sport and retain last good data."""
 
     def __init__(self, hass, entry):
         self.entry = entry
@@ -39,7 +39,7 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
                 "detail": {},
                 "error": None,
             }
-            for sport in SPORCG
+            for sport in SPORTS
         }
         super().__init__(
             hass,
@@ -98,7 +98,7 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
             }
         except (ProviderError, ValueError, KeyError, TypeError) as err:
             self.cache[sport] = {**self.cache[sport], "error": str(err)}
-            _LOGGER.warning("%s CG refresh failed: %s", sport.upper(), err)
+            _LOGGER.warning("%s TS refresh failed: %s", sport.upper(), err)
 
     async def async_set_selected_live_match(self, fixture_id):
         """Select a live game from the panel and refresh its detailed feed."""
@@ -121,7 +121,7 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
         await self.async_request_refresh()
 
     async def _async_update_data(self):
-        await asyncio.gather(*(self._refresh_sport(sport) for sport in SPORCG))
+        await asyncio.gather(*(self._refresh_sport(sport) for sport in SPORTS))
         sports = {}
         live_any = False
 
@@ -160,5 +160,5 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
         return {
             "sports": sports,
             "live_polling": live_any,
-            "provider": "CG",
+            "provider": "TS",
         }
