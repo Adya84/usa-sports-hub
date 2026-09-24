@@ -17,6 +17,7 @@ from .models import (
 API_BASE = "https://api." + "the" + "score.com"
 WEB_API_BASE = "https://www." + "the" + "score.com/api"
 MLB_STATS_BASE = "https://statsapi.mlb.com/api/v1"
+MLB_LIVE_BASE = "https://statsapi.mlb.com/api/v1.1"
 
 
 def _walk(value: Any):
@@ -224,10 +225,11 @@ class TSProvider(ProviderClient):
                         item for item in records if isinstance(item, dict)
                     )
 
-        # MLB sometimes exposes no usable play-by-play through TS even while
-        # the game is live. Resolve the matching MLB gamePk from the public MLB
-        # schedule feed, then use its playByPlay endpoint as a detail fallback.
-        if self.league == "mlb" and not detail["play_by_play"]:
+        # MLB detail enrichment. Resolve the corresponding MLB gamePk once,
+        # then use the public live game feed for inning linescore/current state.
+        # This is internal-only data enrichment; source URLs are never rendered.
+        mlb_live_data: dict[str, Any] = {}
+        if self.league == "mlb":
             mlb_game_pk = None
             try:
                 game_date = str(event.get("game_date") or "")[:10]
@@ -241,9 +243,10 @@ class TSProvider(ProviderClient):
                         teams = game.get("teams") if isinstance(game.get("teams"), dict) else {}
                         home = ((teams.get("home") or {}).get("team") or {}) if isinstance(teams.get("home"), dict) else {}
                         away = ((teams.get("away") or {}).get("team") or {}) if isinstance(teams.get("away"), dict) else {}
-                        h = str(home.get("name") or "").lower()
-                        a = str(away.get("name") or "").lower()
-                        if h == home_name and a == away_name:
+                        if (
+                            str(home.get("name") or "").lower() == home_name
+                            and str(away.get("name") or "").lower() == away_name
+                        ):
                             mlb_game_pk = game.get("gamePk")
                             break
                     if mlb_game_pk:
@@ -253,13 +256,26 @@ class TSProvider(ProviderClient):
 
             if mlb_game_pk:
                 try:
-                    mlb_pbp = await self.async_get_json(
-                        f"{MLB_STATS_BASE}/game/{mlb_game_pk}/playByPlay"
+                    feed = await self.async_get_json(
+                        f"{MLB_LIVE_BASE}/game/{mlb_game_pk}/feed/live"
                     )
                 except Exception:
-                    mlb_pbp = {}
-                if isinstance(mlb_pbp, dict):
-                    all_plays = mlb_pbp.get("allPlays")
+                    feed = {}
+                if isinstance(feed, dict):
+                    mlb_live_data = feed.get("liveData") if isinstance(feed.get("liveData"), dict) else {}
+
+                if not detail["play_by_play"]:
+                    plays_root = mlb_live_data.get("plays") if isinstance(mlb_live_data.get("plays"), dict) else {}
+                    all_plays = plays_root.get("allPlays")
+                    if not isinstance(all_plays, list):
+                        try:
+                            mlb_pbp = await self.async_get_json(
+                                f"{MLB_STATS_BASE}/game/{mlb_game_pk}/playByPlay"
+                            )
+                        except Exception:
+                            mlb_pbp = {}
+                        all_plays = mlb_pbp.get("allPlays") if isinstance(mlb_pbp, dict) else []
+
                     if isinstance(all_plays, list):
                         converted = []
                         for play in all_plays:
@@ -319,6 +335,7 @@ class TSProvider(ProviderClient):
             "box_score": box_score,
             "drives": detail["drives"],
             "related": related_payloads,
+            "mlb_live": mlb_live_data,
         }
         detail["scoring"] = _dedupe_dicts(
             _objects_with_keys(
@@ -432,6 +449,48 @@ class TSProvider(ProviderClient):
             ),
             100,
         )
+
+        if self.league == "mlb" and mlb_live_data:
+            linescore = mlb_live_data.get("linescore") if isinstance(mlb_live_data.get("linescore"), dict) else {}
+            innings = linescore.get("innings") if isinstance(linescore.get("innings"), list) else []
+            inning_rows: list[dict[str, Any]] = []
+            for inning in innings:
+                if not isinstance(inning, dict):
+                    continue
+                home = inning.get("home") if isinstance(inning.get("home"), dict) else {}
+                away = inning.get("away") if isinstance(inning.get("away"), dict) else {}
+                inning_rows.append(
+                    {
+                        "name": f"Inning {inning.get('num') or ''}".strip(),
+                        "inning": inning.get("num"),
+                        "away_runs": away.get("runs"),
+                        "away_hits": away.get("hits"),
+                        "away_errors": away.get("errors"),
+                        "home_runs": home.get("runs"),
+                        "home_hits": home.get("hits"),
+                        "home_errors": home.get("errors"),
+                    }
+                )
+            if inning_rows:
+                detail["periods"] = inning_rows
+
+            offense = linescore.get("offense") if isinstance(linescore.get("offense"), dict) else {}
+            defense = linescore.get("defense") if isinstance(linescore.get("defense"), dict) else {}
+            current_situation = {
+                "name": "Current game situation",
+                "inning": linescore.get("currentInning"),
+                "inning_state": linescore.get("inningState"),
+                "inning_ordinal": linescore.get("currentInningOrdinal"),
+                "balls": linescore.get("balls"),
+                "strikes": linescore.get("strikes"),
+                "outs": linescore.get("outs"),
+                "batter": ((offense.get("batter") or {}).get("fullName") if isinstance(offense.get("batter"), dict) else None),
+                "pitcher": ((defense.get("pitcher") or {}).get("fullName") if isinstance(defense.get("pitcher"), dict) else None),
+                "first_base": bool(offense.get("first")),
+                "second_base": bool(offense.get("second")),
+                "third_base": bool(offense.get("third")),
+            }
+            detail["situations"] = [current_situation] + detail["situations"]
 
         # Keep the live sensor useful but bounded.
         detail["play_by_play"] = detail["play_by_play"][-160:]
