@@ -43,3 +43,9 @@ class IntegrationIdentityTests(unittest.TestCase):
     def test_cache_schema_remains_compatible_with_existing_installations(self):
         source = Path("custom_components/usa_sports_hub/coordinator.py").read_text(encoding="utf-8")
         self.assertIn("CACHE_VERSION = 1", source)
+
+    def test_team_selection_returns_before_background_refresh(self):
+        source = Path("custom_components/usa_sports_hub/coordinator.py").read_text(encoding="utf-8")
+        selection = source[source.index("async def async_select_team"):source.index("async def async_add_team_favourite")]
+        self.assertIn("async_create_task", selection)
+        self.assertIn("_async_refresh_team", selection)

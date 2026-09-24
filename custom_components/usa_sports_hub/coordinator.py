@@ -136,6 +136,10 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
         sport, team_id = self._team_cache_key(sport, team_id)
         self.selected_team_ids[sport] = team_id
         self.async_set_updated_data(self._compose_data())
+        self.hass.async_create_task(self._async_refresh_team(sport, team_id))
+
+    async def _async_refresh_team(self, sport: str, team_id: str) -> None:
+        """Refresh one team's detail after its cached shell has rendered."""
         try:
             detail = await self.providers[sport].async_team_detail(team_id)
             self._store_team_detail(sport, team_id, detail)
