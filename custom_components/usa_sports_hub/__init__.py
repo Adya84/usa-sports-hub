@@ -102,11 +102,6 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
             if isinstance(runtime, dict) and runtime.get("coordinator") is not None:
                 yield runtime["coordinator"]
 
-    async def async_select_live_team(call: ServiceCall) -> None:
-        team = str(call.data.get("team") or "").strip()
-        async for coordinator in _coordinators(call):
-            await coordinator.async_set_supported_team(team)
-
     async def async_select_live_match(call: ServiceCall) -> None:
         fixture_id = str(call.data.get("fixture_id") or "").strip()
         sport = str(call.data.get("sport") or "").strip().lower()
@@ -132,54 +127,18 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         async for coordinator in _coordinators(call):
             await coordinator.async_remove_team_favourite(sport, team_id)
 
-    async def async_select_competition(call: ServiceCall) -> None:
-        competition = str(call.data.get("competition") or "").strip()
-        async for coordinator in _coordinators(call):
-            await coordinator.async_set_competition(competition)
-
-    async def async_select_cup(call: ServiceCall) -> None:
-        competition = str(call.data.get("competition") or "").strip()
-        async for coordinator in _coordinators(call):
-            await coordinator.async_set_cup(competition)
-
-    async def async_select_my_club(call: ServiceCall) -> None:
-        team = str(call.data.get("team") or "").strip()
-        async for coordinator in _coordinators(call):
-            previous = len(coordinator.favourite_clubs)
-            await coordinator.async_set_my_club(team)
-            if len(coordinator.favourite_clubs) != previous:
-                hass.async_create_task(hass.config_entries.async_reload(coordinator.entry.entry_id))
-
-    async def async_remove_favourite_club(call: ServiceCall) -> None:
-        team = str(call.data.get("team") or "").strip()
-        competition = str(call.data.get("competition") or "").strip()
-        async for coordinator in _coordinators(call):
-            await coordinator.async_remove_favourite_club(team, competition)
-            hass.async_create_task(hass.config_entries.async_reload(coordinator.entry.entry_id))
-
-    async def async_save_ui_preferences(call: ServiceCall) -> None:
-        preferences = call.data.get("preferences") or {}
-        if isinstance(preferences, str):
-            import json
-            preferences = json.loads(preferences)
-        async for coordinator in _coordinators(call):
-            await coordinator.async_set_ui_preferences(preferences if isinstance(preferences, dict) else {})
-
     async def async_refresh(call: ServiceCall) -> None:
         async for coordinator in _coordinators(call):
             await coordinator.async_request_refresh()
 
+    # Register only services implemented by the active USA Sports coordinator.
+    # Legacy Football Hub services are intentionally not exposed because this
+    # coordinator has no matching methods for them.
     services = {
-        "select_live_team": async_select_live_team,
         "select_live_match": async_select_live_match,
         "select_team": async_select_team,
         "add_team_favourite": async_add_team_favourite,
         "remove_team_favourite": async_remove_team_favourite,
-        "select_competition": async_select_competition,
-        "select_cup": async_select_cup,
-        "select_my_club": async_select_my_club,
-        "remove_favourite_club": async_remove_favourite_club,
-        "save_ui_preferences": async_save_ui_preferences,
         "refresh": async_refresh,
     }
     for name, handler in services.items():
