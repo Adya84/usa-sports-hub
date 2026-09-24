@@ -1,4 +1,4 @@
-"""Provider normalization contracts for theScore-backed USA Sports Hub."""
+"""Provider normalization contracts for TS-backed USA Sports Hub."""
 
 import importlib.util
 import unittest
@@ -11,13 +11,13 @@ SPEC = importlib.util.spec_from_file_location(
 models = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(models)
 
-normalize_event = models.normalize_the_score_event
-normalize_standing = models.normalize_the_score_standing
-compact_news = models.compact_the_score_news
+normalize_event = models.normalize_ts_event
+normalize_standing = models.normalize_ts_standing
+compact_news = models.compact_ts_news
 
 
 class ProviderModelTests(unittest.TestCase):
-    def test_the_score_event_keeps_live_detail(self):
+    def test_ts_event_keeps_live_detail(self):
         event = {
             "id": 123,
             "event_status": "in_progress",
@@ -48,7 +48,7 @@ class ProviderModelTests(unittest.TestCase):
         self.assertEqual(game["box_score_uri"], "/nfl/box_scores/99")
         self.assertEqual(game["clock"], "4:12")
 
-    def test_the_score_standing_keeps_sport_specific_fields(self):
+    def test_ts_standing_keeps_sport_specific_fields(self):
         row = {
             "id": 3227,
             "wins": 97,
@@ -71,7 +71,7 @@ class ProviderModelTests(unittest.TestCase):
         self.assertEqual(item["runs_differential"], 200)
         self.assertTrue(item["clinched_playoffs"])
 
-    def test_news_is_built_from_the_score_event_articles(self):
+    def test_news_is_built_from_ts_event_articles(self):
         items = compact_news([
             {
                 "id": 1,
@@ -82,7 +82,7 @@ class ProviderModelTests(unittest.TestCase):
         ])
         self.assertEqual(items[0]["title"], "Game recap")
         self.assertEqual(items[0]["kind"], "recap")
-        self.assertIn("thescore.com/articles/1", items[0]["url"])
+        self.assertIn("score.com/articles/1", items[0]["url"])
 
 
 if __name__ == "__main__":
