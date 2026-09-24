@@ -16,6 +16,7 @@ from .models import (
 
 API_BASE = "https://api." + "the" + "score.com"
 WEB_API_BASE = "https://www." + "the" + "score.com/api"
+MLB_STATS_BASE = "https://statsapi.mlb.com/api/v1"
 
 
 def _walk(value: Any):
@@ -222,6 +223,48 @@ class TSProvider(ProviderClient):
                     detail["play_by_play"].extend(
                         item for item in records if isinstance(item, dict)
                     )
+
+        # MLB sometimes exposes no usable play-by-play through TS even while
+        # the game is live. Use MLB's public live game feed as a detail fallback
+        # so the Game Centre can still show at-bats, pitch events and inning flow.
+        if self.league == "mlb" and not detail["play_by_play"]:
+            try:
+                mlb_pbp = await self.async_get_json(
+                    f"{MLB_STATS_BASE}/game/{game_id}/playByPlay"
+                )
+            except Exception:
+                mlb_pbp = {}
+            if isinstance(mlb_pbp, dict):
+                all_plays = mlb_pbp.get("allPlays")
+                if isinstance(all_plays, list):
+                    converted = []
+                    for play in all_plays:
+                        if not isinstance(play, dict):
+                            continue
+                        result = play.get("result") if isinstance(play.get("result"), dict) else {}
+                        about = play.get("about") if isinstance(play.get("about"), dict) else {}
+                        matchup = play.get("matchup") if isinstance(play.get("matchup"), dict) else {}
+                        count = play.get("count") if isinstance(play.get("count"), dict) else {}
+                        batter = matchup.get("batter") if isinstance(matchup.get("batter"), dict) else {}
+                        pitcher = matchup.get("pitcher") if isinstance(matchup.get("pitcher"), dict) else {}
+                        converted.append(
+                            {
+                                "description": result.get("description") or result.get("event"),
+                                "event": result.get("event"),
+                                "inning": about.get("inning"),
+                                "half_inning": about.get("halfInning"),
+                                "is_scoring_play": about.get("isScoringPlay"),
+                                "away_score": result.get("awayScore"),
+                                "home_score": result.get("homeScore"),
+                                "rbi": result.get("rbi"),
+                                "balls": count.get("balls"),
+                                "strikes": count.get("strikes"),
+                                "outs": count.get("outs"),
+                                "batter": batter.get("fullName"),
+                                "pitcher": pitcher.get("fullName"),
+                            }
+                        )
+                    detail["play_by_play"].extend(converted)
 
         # Follow additional game-detail endpoints advertised by the event/box score.
         # Different sports expose lineups, injuries, rosters, player stats and
