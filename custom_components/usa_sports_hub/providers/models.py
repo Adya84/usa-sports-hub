@@ -68,6 +68,54 @@ def _team_headshot(player: dict[str, Any]) -> str | None:
     )
 
 
+def _team_person(row: dict[str, Any]) -> dict[str, Any]:
+    person = row.get("player") if isinstance(row.get("player"), dict) else row
+    return {
+        "player_name": person.get("full_name") or person.get("first_initial_and_last_name") or person.get("name") or "Player",
+        "headshot": _team_headshot(person),
+        "position": person.get("position_abbreviation") or person.get("position") or "",
+    }
+
+
+def _compact_team_statistics(rows: Any) -> list[dict[str, Any]]:
+    result = []
+    for row in _team_collection(rows)[:80]:
+        person = _team_person(row)
+        result.append({
+            **person,
+            "name": person["player_name"],
+            "label": row.get("category") or row.get("stat_name") or row.get("stat") or row.get("name") or "Season statistic",
+            "value": row.get("value") or row.get("display_value") or row.get("stat_value") or "",
+        })
+    return result
+
+
+def _compact_team_leaders(rows: Any) -> list[dict[str, Any]]:
+    result = []
+    for row in _team_collection(rows)[:24]:
+        person = _team_person(row)
+        result.append({
+            **person,
+            "name": person["player_name"],
+            "label": row.get("category") or row.get("label") or row.get("stat_name") or "Leader",
+            "value": row.get("stat") or row.get("value") or row.get("display_value") or row.get("stat_value") or "",
+        })
+    return result
+
+
+def _compact_team_injuries(rows: Any) -> list[dict[str, Any]]:
+    result = []
+    for row in _team_collection(rows)[:40]:
+        person = _team_person(row)
+        result.append({
+            **person,
+            "name": person["player_name"],
+            "status": row.get("status") or row.get("injury_status") or row.get("injury") or "Injury report",
+            "note": row.get("description") or row.get("injury_note") or "",
+        })
+    return result
+
+
 def normalize_ts_team_detail(
     league: str,
     profile: Any,
@@ -108,9 +156,9 @@ def normalize_ts_team_detail(
             "extra": _team_collection(profile.get("team_extra_info")),
         },
         "squad": compact_squad,
-        "statistics": _team_collection(statistics),
-        "leaders": _team_collection(leaders),
-        "injuries": _team_collection(injuries),
+        "statistics": _compact_team_statistics(statistics),
+        "leaders": _compact_team_leaders(leaders),
+        "injuries": _compact_team_injuries(injuries),
         "league": league.upper(),
     }
 def normalize_ts_event(event: dict[str, Any], league: str) -> dict[str, Any]:
