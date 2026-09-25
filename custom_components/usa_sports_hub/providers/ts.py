@@ -134,6 +134,32 @@ class TSProvider(ProviderClient):
                 return group.get("events", []) or []
         return []
 
+    def normalize_ticker_games(self, ticker: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Extract normalized league games from the lightweight ticker feed."""
+        games: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for item in ticker or []:
+            if not isinstance(item, dict):
+                continue
+            candidates = [item]
+            for key in ("event", "game", "matchup"):
+                nested = item.get(key)
+                if isinstance(nested, dict):
+                    candidates.insert(0, nested)
+            for candidate in candidates:
+                if candidate.get("id") is None:
+                    continue
+                if not isinstance(candidate.get("home_team"), dict) or not isinstance(candidate.get("away_team"), dict):
+                    continue
+                game = normalize_ts_event(candidate, self.league)
+                game_id = str(game.get("game_id") or "")
+                if not game_id or game_id in seen:
+                    continue
+                seen.add(game_id)
+                games.append(game)
+                break
+        return games
+
     async def async_standings(self) -> list[dict[str, Any]]:
         payload = await self.async_get_json(f"{self.base}/standings")
         if not isinstance(payload, list):
