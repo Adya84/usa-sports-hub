@@ -58,3 +58,20 @@ test('MLB team pages keep favourite controls and game-centre navigation', () => 
   assert.match(source, /data-live-game/);
   assert.match(source, /select_team/);
 });
+
+
+test('NBA has dedicated pages, live centre and team navigation', () => {
+  const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
+  for (const value of ['nbaOverviewPage','nbaLivePage','nbaDataPage','NBA Schedule','NBA Results','NBA Standings','NBA Teams','NBA Players','NBA Statistics','NBA News & Game Stories','My NBA Team','data-nba-team-id']) {
+    assert.ok(source.includes(value), value + ' should exist in the NBA page implementation');
+  }
+  assert.match(source, /if\(this\.sport==='nba'\)return this\.nbaLivePage/);
+  assert.match(source, /if\(this\.sport==='nba'\)return this\.nbaDataPage/);
+});
+
+test('Game Centre exposes every connected detail sensor including related data', () => {
+  const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
+  for (const value of ['box_score','play_by_play','statistics','players','lineups','scoring','injuries','leaders','periods','officials','situations','odds','stadium','ticker','related','RELATED GAME DATA']) {
+    assert.ok(source.includes(value), value + ' should be represented in the game centre');
+  }
+});
