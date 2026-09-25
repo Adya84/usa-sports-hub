@@ -841,6 +841,7 @@ UsaSportsHubPanel.prototype.render=function(){
     this.shadowRoot.querySelectorAll('[data-mlb-team-id]').forEach(button=>button.addEventListener('click',()=>{const teamId=button.dataset.mlbTeamId,teamName=button.dataset.mlbTeamName||'';if(!teamId)return;this.team=teamName;localStorage.setItem('usa_sports_hub_team',teamName);this.tab='My Team';localStorage.setItem('usa_sports_hub_mlb_tab','My Team');this._hass?.callService('usa_sports_hub','select_team',{sport:'mlb',team_id:teamId}).catch(err=>console.warn(err));this.render();}));
   }
   if(this.sport==='nfl'){
+    this.shadowRoot.querySelectorAll('[data-live-game]').forEach(button=>{if(!button.dataset.nflBound){button.dataset.nflBound='1';button.addEventListener('click',()=>this.openLiveGame(button.dataset.liveGame));}});
     this.shadowRoot.querySelectorAll('[data-nfl-team-id]').forEach(button=>button.addEventListener('click',()=>{const teamId=button.dataset.nflTeamId,teamName=button.dataset.nflTeamName||'';if(!teamId)return;this.team=teamName;localStorage.setItem('usa_sports_hub_team',teamName);this.tab='My Team';localStorage.setItem('usa_sports_hub_nfl_tab','My Team');this._hass?.callService('usa_sports_hub','select_team',{sport:'nfl',team_id:teamId}).catch(err=>console.warn(err));this.render();}));
   }
 };
