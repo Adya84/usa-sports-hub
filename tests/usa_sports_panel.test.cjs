@@ -75,3 +75,20 @@ test('Game Centre exposes every connected detail sensor including related data',
     assert.ok(source.includes(value), value + ' should be represented in the game centre');
   }
 });
+
+
+test('NHL has dedicated pages, live centre and team navigation', () => {
+  const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
+  for (const value of ['nhlOverviewPage','nhlLivePage','nhlDataPage','NHL Schedule','NHL Results','NHL Standings','NHL Teams','NHL Players','NHL Statistics','NHL News & Game Stories','My NHL Team','data-nhl-team-id']) {
+    assert.ok(source.includes(value), value + ' should exist in the NHL page implementation');
+  }
+  assert.match(source, /if\(this\.sport==='nhl'\)return this\.nhlLivePage/);
+  assert.match(source, /if\(this\.sport==='nhl'\)return this\.nhlDataPage/);
+});
+
+test('NHL provider recognises hockey-specific live and stat fields', () => {
+  const source = fs.readFileSync('custom_components/usa_sports_hub/providers/ts.py', 'utf8');
+  for (const value of ['skaters', 'goalies', 'blocked_shots', 'penalty_minutes', 'power_play_goals', 'save_percentage', 'goalie_pulled', 'team_on_power_play']) {
+    assert.ok(source.includes(value), value + ' should be recognised by NHL data extraction');
+  }
+});
