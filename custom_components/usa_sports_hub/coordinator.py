@@ -182,6 +182,21 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
                 provider.async_ticker(),
             )
 
+            # Merge the lightweight ticker into the schedule before classifying
+            # games. The ticker is often the freshest source for games that have
+            # just kicked off, while the wider event query can lag behind.
+            ticker_games = provider.normalize_ticker_games(ticker)
+            if ticker_games:
+                merged = {str(game.get("game_id") or ""): game for game in games if game.get("game_id")}
+                for ticker_game in ticker_games:
+                    game_id = str(ticker_game.get("game_id") or "")
+                    if not game_id:
+                        continue
+                    existing = merged.get(game_id) or {}
+                    # Prefer ticker state/score/clock, retain richer schedule fields.
+                    merged[game_id] = {**existing, **{k: v for k, v in ticker_game.items() if v not in (None, "", [])}}
+                games = sorted(merged.values(), key=lambda item: str(item.get("start_time") or ""))
+
             live = [game for game in games if game.get("is_live")]
             upcoming = [
                 game for game in games
