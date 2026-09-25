@@ -628,6 +628,152 @@ UsaSportsHubPanel.prototype.mlbDataPage=function(s,tab,items,sensor,entity,score
   return '';
 };
 
+
+/* NFL league pages: football-specific presentation using the shared sensors. */
+UsaSportsHubPanel.prototype.nflPageStyles=function(){
+  return '<style>'+
+  '.nfl-site{display:grid;gap:16px}.nfl-hero{position:relative;overflow:hidden;border:1px solid #2b78ad;border-radius:14px;padding:26px;background:linear-gradient(115deg,#061a31f5,#06101df0);box-shadow:0 14px 34px #0008}.nfl-hero:after{content:"NFL";position:absolute;right:22px;top:-28px;font-size:9rem;font-weight:1000;color:#ffffff08;letter-spacing:-.08em}.nfl-hero small{color:#63cfff;font-size:.88rem;font-weight:950;letter-spacing:.12em}.nfl-hero h2{margin:7px 0 4px;font-size:clamp(2rem,4vw,3.4rem)}.nfl-hero p{margin:0;color:#b3c7d9;font-size:1.05rem;line-height:1.5}.nfl-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}.nfl-kpi{border:1px solid #285d84;background:linear-gradient(145deg,#071c31,#030f1b);border-radius:11px;padding:17px 16px}.nfl-kpi small{display:block;color:#69d0ff;font-size:.8rem;font-weight:950;letter-spacing:.07em}.nfl-kpi b{display:block;font-size:1.75rem;line-height:1.1;margin-top:5px}.nfl-kpi span{color:#9db3c8;font-size:.9rem}.nfl-card{border:1px solid #1d4665;background:#030d18ef;border-radius:12px;overflow:hidden;box-shadow:0 10px 28px #0006}.nfl-card>header{display:flex;align-items:center;justify-content:space-between;padding:14px 17px;background:linear-gradient(90deg,#09355b,#071522);border-bottom:1px solid #276991}.nfl-card>header b{font-size:.95rem;letter-spacing:.07em}.nfl-card>header span{font-size:.88rem;color:#73d5ff;font-weight:800}.nfl-grid{display:grid;grid-template-columns:1.45fr .9fr;gap:14px}.nfl-game-list{display:grid}.nfl-game-row{display:grid;grid-template-columns:115px minmax(360px,620px) 170px 36px;gap:20px;justify-content:start;align-items:center;width:100%;border:0;border-bottom:1px solid #172a3b;background:transparent;color:#fff;padding:17px 18px;text-align:left;cursor:pointer}.nfl-game-row:hover{background:#0a2237}.nfl-game-row:last-child{border-bottom:0}.nfl-game-time b{display:block;font-size:1rem}.nfl-game-time small{display:block;color:#9aafc4;font-size:.84rem;margin-top:2px}.nfl-match-mini{display:grid;gap:8px;min-width:0}.nfl-match-mini div{display:grid;grid-template-columns:34px minmax(0,1fr) 48px;gap:11px;align-items:center}.nfl-match-mini img,.nfl-match-mini .live-team-logo{width:31px;height:31px}.nfl-match-mini b{font-size:1.02rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nfl-match-mini strong{font-size:1.2rem;text-align:right}.nfl-game-state{font-size:.9rem;font-weight:950;color:#75d4ff;line-height:1.25}.nfl-game-open{font-size:1.55rem;color:#62dbff;text-align:center}.nfl-standing-head,.nfl-standing-row{display:grid;grid-template-columns:38px minmax(210px,1.4fr) 70px 70px 80px 85px;gap:10px;align-items:center;padding:12px 14px;min-width:650px}.nfl-standing-head{background:#111d28;color:#9bb0c2;font-size:.72rem;font-weight:950;letter-spacing:.06em}.nfl-standing-row{border-bottom:1px solid #162736;font-size:.92rem;cursor:pointer}.nfl-standing-row:hover{background:#0a2135}.nfl-standing-row .team{display:flex;align-items:center;gap:10px;font-weight:850}.nfl-standing-row .team img,.nfl-standing-row .team .live-team-logo{width:31px;height:31px}.nfl-group-title{padding:11px 14px;background:#072741;color:#67ceff;font-weight:950;font-size:.82rem;letter-spacing:.08em}.nfl-team-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}.nfl-team-tile{display:flex;align-items:center;gap:12px;border:1px solid #1f4b6d;background:linear-gradient(135deg,#071b2e,#030f1b);border-radius:11px;padding:15px;color:#fff;cursor:pointer;text-align:left}.nfl-team-tile:hover{transform:translateY(-1px);border-color:#43c8ff}.nfl-team-tile img,.nfl-team-tile .live-team-logo{width:54px;height:54px}.nfl-team-tile h3{margin:0;font-size:1rem}.nfl-team-tile small{display:block;color:#9cb1c5;margin-top:3px}.nfl-player-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}.nfl-player-card{border:1px solid #1f4968;border-radius:12px;background:linear-gradient(160deg,#08243b,#030b13);padding:14px;text-align:center}.nfl-player-card .nfl-player-photo,.nfl-player-card .nfl-avatar{width:88px;height:88px;margin:auto;border-radius:50%}.nfl-player-card h3{margin:10px 0 3px;font-size:1rem}.nfl-player-card>small{display:block;color:#93aabe}.nfl-player-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:11px}.nfl-player-stats span{background:#020b12;border:1px solid #ffffff12;padding:7px}.nfl-player-stats b,.nfl-player-stats small{display:block}.nfl-player-stats small{font-size:.62rem;color:#7f98ad}.nfl-stat-table{display:grid}.nfl-stat-row{display:grid;grid-template-columns:minmax(230px,.95fr) minmax(260px,1.05fr);gap:24px;padding:15px 18px;border-bottom:1px solid #142535;align-items:center}.nfl-stat-row b{font-size:1.02rem}.nfl-stat-meta{display:flex;align-items:center;gap:18px;min-width:0}.nfl-stat-meta span{color:#adc0d2;font-size:.95rem}.nfl-stat-meta strong{margin-left:auto;color:#5bd8ff;font-size:1rem}.nfl-leaders{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:12px}.nfl-leader{display:flex;align-items:center;gap:11px;border:1px solid #1d4563;background:#061522;border-radius:10px;padding:12px}.nfl-leader .nfl-player-photo,.nfl-leader .nfl-avatar{width:52px;height:52px}.nfl-leader div{min-width:0}.nfl-leader small,.nfl-leader b,.nfl-leader strong{display:block}.nfl-leader small{color:#90a9bf}.nfl-leader strong{color:#5bd8ff;font-size:1.2rem}.nfl-news-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.nfl-news{border:1px solid #1d4969;border-radius:12px;background:linear-gradient(145deg,#071a2d,#030b13);padding:17px;color:#fff;text-align:left;cursor:pointer}.nfl-news small{color:#65cfff;font-weight:950}.nfl-news h3{margin:8px 0;font-size:1.1rem}.nfl-news p{margin:0;color:#a8bacb;line-height:1.45}.nfl-news footer{margin-top:13px;color:#7890a5;font-size:.8rem}.nfl-team-focus{display:grid;grid-template-columns:110px 1fr auto;gap:18px;align-items:center;border:1px solid #28668f;border-radius:13px;padding:18px;background:linear-gradient(120deg,#0a2a48,#03111f)}.nfl-team-focus img{width:96px;height:96px;object-fit:contain}.nfl-team-focus h2{margin:0}.nfl-team-focus p{margin:5px 0 0;color:#9eb3c6}.nfl-focus-record{text-align:right}.nfl-focus-record b{display:block;font-size:2rem}.nfl-focus-record small{color:#75d4ff}.nfl-injury-row{display:grid;grid-template-columns:minmax(160px,1fr) 150px;gap:10px;padding:11px 14px;border-bottom:1px solid #152736}.nfl-injury-row span{color:#ff94a2;text-align:right}.nfl-live-empty{padding:28px;text-align:center;color:#9ab0c4}.nfl-live-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.nfl-live-card{border:1px solid #256a93;background:linear-gradient(145deg,#081d31,#030d18);border-radius:12px;padding:15px;color:#fff;text-align:left;cursor:pointer}.nfl-live-card.active{box-shadow:0 0 0 1px #39d1ff inset,0 0 22px #168fd144}.nfl-live-card header{display:flex;justify-content:space-between;gap:12px;color:#68d4ff;font-weight:900}.nfl-live-card .teamline{display:grid;grid-template-columns:42px 1fr auto;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid #ffffff12}.nfl-live-card .teamline:last-of-type{border-bottom:0}.nfl-live-card .teamline img,.nfl-live-card .teamline .live-team-logo{width:38px;height:38px}.nfl-live-card .teamline b{font-size:1.08rem}.nfl-live-card .teamline strong{font-size:1.6rem}.nfl-live-card footer{display:flex;justify-content:space-between;gap:12px;margin-top:10px;color:#9fb4c7}.nfl-live-card footer b{color:#65d7ff}.nfl-empty{padding:28px;text-align:center;color:#9cb2c5}@media(max-width:1100px){.nfl-grid{grid-template-columns:1fr}.nfl-team-grid,.nfl-player-grid{grid-template-columns:repeat(2,1fr)}.nfl-leaders{grid-template-columns:repeat(2,1fr)}}@media(max-width:760px){.nfl-kpis{grid-template-columns:repeat(2,1fr)}.nfl-team-grid,.nfl-player-grid,.nfl-news-grid,.nfl-live-grid,.nfl-leaders{grid-template-columns:1fr}.nfl-game-row{grid-template-columns:82px minmax(0,1fr) 34px;gap:10px;padding:14px 12px}.nfl-game-state{grid-column:2;font-size:.82rem}.nfl-game-open{grid-column:3;grid-row:1/3}.nfl-match-mini div{grid-template-columns:30px minmax(0,1fr) 38px}.nfl-stat-row{grid-template-columns:1fr;gap:5px;padding:13px 12px}.nfl-stat-meta{justify-content:space-between}.nfl-team-focus{grid-template-columns:70px 1fr}.nfl-team-focus img{width:64px;height:64px}.nfl-focus-record{grid-column:1/-1;text-align:left}}'+
+  '</style>';
+};
+
+UsaSportsHubPanel.prototype.nflPlayerPhoto=function(player,sizeClass){
+  const url=player?.headshot||player?.image||player?.headshot_url||player?.headshots?.w192xh192||player?.headshots?.large||'';
+  const name=player?.name||player?.full_name||player?.player_name||'Player';
+  return url
+    ? '<img class="nfl-player-photo '+esc(sizeClass||'')+'" src="'+esc(url)+'" alt="'+esc(name)+'" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'"><span class="nfl-avatar '+esc(sizeClass||'')+'" style="display:none">'+esc(String(name).charAt(0))+'</span>'
+    : '<span class="nfl-avatar '+esc(sizeClass||'')+'">'+esc(String(name).charAt(0))+'</span>';
+};
+
+UsaSportsHubPanel.prototype.nflGameRow=function(game){
+  const start=game?.start_time?new Date(game.start_time):null;
+  const valid=start&&!Number.isNaN(start.getTime());
+  const day=valid?new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric'}).format(start):'Game';
+  const time=valid?new Intl.DateTimeFormat(undefined,{hour:'2-digit',minute:'2-digit'}).format(start):'';
+  const state=game?.is_live?([game.period_label,game.clock].filter(Boolean).join(' · ')||'LIVE'):(game?.is_final?'FINAL':(game?.status_detail||'SCHEDULED'));
+  return '<button class="nfl-game-row" data-live-game="'+esc(game?.game_id||'')+'">'+
+    '<div class="nfl-game-time"><b>'+esc(day)+'</b><small>'+esc(time)+'</small></div>'+
+    '<div class="nfl-match-mini"><div>'+this.gameLogo(game?.away_logo,game?.away_team)+'<b>'+esc(game?.away_team||'Away')+'</b><strong>'+esc(game?.away_score??'–')+'</strong></div><div>'+this.gameLogo(game?.home_logo,game?.home_team)+'<b>'+esc(game?.home_team||'Home')+'</b><strong>'+esc(game?.home_score??'–')+'</strong></div></div>'+
+    '<div class="nfl-game-state">'+esc(state)+'</div><div class="nfl-game-open">›</div></button>';
+};
+
+UsaSportsHubPanel.prototype.nflStandingsRows=function(rows){
+  const groups={};
+  for(const row of rows||[]){
+    const key=[row.conference,row.division].filter(Boolean).join(' · ')||'NFL';
+    (groups[key]=groups[key]||[]).push(row);
+  }
+  return Object.entries(groups).map(([group,items])=>
+    '<div class="nfl-group-title">'+esc(group)+'</div>'+
+    items.map((x,i)=>'<div class="nfl-standing-row" data-nfl-team-id="'+esc(x.team_id||'')+'" data-nfl-team-name="'+esc(x.team||'')+'"><strong>'+esc(x.division_rank||x.conference_rank||x.rank||i+1)+'</strong><div class="team">'+this.gameLogo(x.logo,x.team)+'<span>'+esc(x.team||'Team')+'</span></div><span>'+esc(x.record||'–')+'</span><span>'+esc(x.winning_percentage??'–')+'</span><span>'+esc(x.streak||'–')+'</span><span>'+esc(x.playoff_seed??x.formatted_rank??'–')+'</span></div>').join('')
+  ).join('');
+};
+
+UsaSportsHubPanel.prototype.nflOverviewPage=function(s,items,sensor){
+  const live=items('live')||[],fixtures=items('fixtures')||[],results=items('results')||[],standings=items('standings')||[],leaders=items('leaders')||[],injuries=items('injuries')||[];
+  const next=fixtures[0],latest=results[results.length-1];
+  const top=standings.find(x=>Number(x.conference_rank)===1)||standings[0]||{};
+  const nextRows=fixtures.slice(0,5).map(g=>this.nflGameRow(g)).join('');
+  return this.nflPageStyles()+'<section class="nfl-site">'+
+    '<div class="nfl-hero"><small>NATIONAL FOOTBALL LEAGUE</small><h2>NFL Central</h2><p>Live scores, weekly schedule, standings, rosters, leaders, injuries and full drive-by-drive Game Centre data.</p></div>'+
+    '<div class="nfl-kpis"><div class="nfl-kpi"><small>LIVE NOW</small><b>'+live.length+'</b><span>active games</span></div><div class="nfl-kpi"><small>UPCOMING</small><b>'+fixtures.length+'</b><span>games loaded</span></div><div class="nfl-kpi"><small>TEAMS</small><b>'+standings.length+'</b><span>standings rows</span></div><div class="nfl-kpi"><small>INJURIES</small><b>'+injuries.length+'</b><span>game detail records</span></div></div>'+
+    (live.length?'<section class="nfl-card"><header><b>● LIVE NFL</b><span>'+live.length+' game'+(live.length===1?'':'s')+'</span></header><div class="nfl-live-grid" style="padding:12px">'+live.slice(0,6).map(g=>this.nflLiveCard(g)).join('')+'</div></section>':'')+
+    '<div class="nfl-grid"><section class="nfl-card"><header><b>UP NEXT</b><span>Schedule</span></header><div class="nfl-game-list">'+(nextRows||'<div class="nfl-empty">No upcoming games loaded.</div>')+'</div></section>'+
+    '<section class="nfl-card"><header><b>LEAGUE SNAPSHOT</b><span>NFL</span></header><div style="padding:18px">'+
+      (top.team?'<div style="display:flex;align-items:center;gap:12px">'+this.gameLogo(top.logo,top.team)+'<div><small style="color:#68d4ff">TOP RANKED</small><h3 style="margin:3px 0">'+esc(top.team)+'</h3><span style="color:#9eb3c6">'+esc([top.record,top.conference,top.division].filter(Boolean).join(' · '))+'</span></div></div>':'<div class="nfl-empty">Standings loading.</div>')+
+      (latest?'<div style="margin-top:18px;padding-top:14px;border-top:1px solid #173044"><small style="color:#68d4ff">LATEST FINAL</small><b style="display:block;margin-top:5px">'+esc((latest.away_team||'')+' '+(latest.away_score??'–')+' · '+(latest.home_score??'–')+' '+(latest.home_team||''))+'</b></div>':'')+
+      (leaders.length?'<div style="margin-top:18px;padding-top:14px;border-top:1px solid #173044"><small style="color:#68d4ff">GAME LEADERS LOADED</small><b style="display:block;margin-top:5px">'+leaders.length+'</b></div>':'')+
+    '</div></section></div>'+
+  '</section>';
+};
+
+UsaSportsHubPanel.prototype.nflLiveCard=function(game){
+  const timing=[game?.period_label,game?.clock].filter(Boolean).join(' · ')||(game?.status_detail||'LIVE');
+  return '<button class="nfl-live-card '+(game?.is_live?'active':'')+'" data-live-game="'+esc(game?.game_id||'')+'"><header><span>● LIVE</span><small>'+esc(timing)+'</small></header><div class="teamline">'+this.gameLogo(game?.away_logo,game?.away_team)+'<b>'+esc(game?.away_team||'Away')+'</b><strong>'+esc(game?.away_score??'–')+'</strong></div><div class="teamline">'+this.gameLogo(game?.home_logo,game?.home_team)+'<b>'+esc(game?.home_team||'Home')+'</b><strong>'+esc(game?.home_score??'–')+'</strong></div><footer><span>'+esc(game?.venue||game?.location||'')+'</span><b>OPEN GAME ›</b></footer></button>';
+};
+
+UsaSportsHubPanel.prototype.nflLivePage=function(s,items,sensor){
+  const live=items('live')||[],fixtures=items('fixtures')||[],ticker=items('ticker')||[];
+  return this.nflPageStyles()+'<section class="nfl-site">'+
+    '<div class="nfl-hero"><small>NFL LIVE CENTRE</small><h2>Live Football</h2><p>Scores, quarter, clock and possession feed into the full drive-by-drive Game Centre.</p></div>'+
+    '<div class="nfl-kpis"><div class="nfl-kpi"><small>LIVE</small><b>'+live.length+'</b><span>games now</span></div><div class="nfl-kpi"><small>UPCOMING</small><b>'+fixtures.length+'</b><span>scheduled</span></div><div class="nfl-kpi"><small>TICKER</small><b>'+ticker.length+'</b><span>live feed records</span></div><div class="nfl-kpi"><small>REFRESH</small><b>'+ (live.length?'8s':'5m') +'</b><span>coordinator cadence</span></div></div>'+
+    (live.length?'<div class="nfl-live-grid">'+live.map(g=>this.nflLiveCard(g)).join('')+'</div>':'<section class="nfl-card"><div class="nfl-live-empty"><b>No NFL game is currently marked live.</b><br>The live ticker is connected; games will move here as soon as the provider reports active play.</div></section>')+
+    (!live.length&&fixtures.length?'<section class="nfl-card"><header><b>NEXT KICKOFFS</b><span>Upcoming</span></header><div class="nfl-game-list">'+fixtures.slice(0,5).map(g=>this.nflGameRow(g)).join('')+'</div></section>':'')+
+  '</section>';
+};
+
+UsaSportsHubPanel.prototype.nflDataPage=function(s,tab,items,sensor,entity,score){
+  const fixtures=items('fixtures')||[],results=items('results')||[],standings=items('standings')||[],news=items('news')||[],live=items('live')||[];
+  const teams=entity?.attributes?.teams||[];
+  const profile=sensor('team_profile')?.attributes?.team_profile||{};
+  const squad=sensor('team_squad')?.attributes?.team_squad||[];
+  const teamStats=sensor('team_statistics')?.attributes?.team_statistics||[];
+  const teamLeaders=sensor('team_leaders')?.attributes?.team_leaders||[];
+  const teamInjuries=sensor('team_injuries')?.attributes?.team_injuries||[];
+  const favourites=sensor('status')?.attributes?.team_favourites||[];
+  const gamePlayers=items('players')||[],gameStats=items('statistics')||[],gameLeaders=items('leaders')||[],gameInjuries=items('injuries')||[];
+  const shell=(title,sub,body)=>this.nflPageStyles()+'<section class="nfl-site"><div class="nfl-hero"><small>USA SPORTS HUB · NFL</small><h2>'+title+'</h2><p>'+sub+'</p></div>'+body+'</section>';
+
+  if(tab==='Fixtures'||tab==='Results'){
+    const games=tab==='Fixtures'?fixtures:results;
+    const title=tab==='Fixtures'?'NFL Schedule':'NFL Results';
+    const body='<div class="nfl-kpis"><div class="nfl-kpi"><small>'+tab.toUpperCase()+'</small><b>'+games.length+'</b><span>games loaded</span></div><div class="nfl-kpi"><small>TEAMS</small><b>'+teams.length+'</b><span>NFL clubs</span></div><div class="nfl-kpi"><small>LIVE</small><b>'+live.length+'</b><span>right now</span></div><div class="nfl-kpi"><small>STORIES</small><b>'+news.length+'</b><span>previews & recaps</span></div></div><section class="nfl-card"><header><b>'+tab.toUpperCase()+'</b><span>Open a game ›</span></header><div class="nfl-game-list">'+(games.map(g=>this.nflGameRow(g)).join('')||'<div class="nfl-empty">No '+tab.toLowerCase()+' available.</div>')+'</div></section>';
+    return shell(title,tab==='Fixtures'?'Weekly NFL matchups with local kickoff times. Open any game for drives, play-by-play and game stats.':'Final scores and completed matchups with full game detail.',body);
+  }
+
+  if(tab==='Standings'){
+    return shell('NFL Standings','Conference and division standings with records, percentage, streak and playoff seed.','<div class="nfl-kpis"><div class="nfl-kpi"><small>CLUBS</small><b>'+standings.length+'</b><span>standings rows</span></div><div class="nfl-kpi"><small>CONFERENCES</small><b>'+new Set(standings.map(x=>x.conference).filter(Boolean)).size+'</b><span>loaded</span></div><div class="nfl-kpi"><small>DIVISIONS</small><b>'+new Set(standings.map(x=>x.division).filter(Boolean)).size+'</b><span>loaded</span></div><div class="nfl-kpi"><small>PLAYOFF SEEDS</small><b>'+standings.filter(x=>x.playoff_seed).length+'</b><span>available</span></div></div><section class="nfl-card"><header><b>NFL STANDINGS</b><span>REC · PCT · STRK · SEED</span></header><div style="overflow:auto"><div class="nfl-standing-head"><span>#</span><span>TEAM</span><span>REC</span><span>PCT</span><span>STRK</span><span>SEED</span></div>'+this.nflStandingsRows(standings)+'</div></section>');
+  }
+
+  if(tab==='Teams'){
+    const tiles=teams.map(x=>'<button class="nfl-team-tile" data-nfl-team-id="'+esc(x.id||'')+'" data-nfl-team-name="'+esc(x.name||'')+'">'+this.gameLogo(x.logo,x.name)+'<div><h3>'+esc(x.name||'Team')+'</h3><small>'+esc([x.abbreviation,x.conference,x.division].filter(Boolean).join(' · '))+'</small></div></button>').join('');
+    return shell('NFL Teams','Browse all NFL clubs. Open a team to load roster, season leaders, statistics, injuries and its schedule.','<div class="nfl-kpis"><div class="nfl-kpi"><small>NFL CLUBS</small><b>'+teams.length+'</b><span>available</span></div><div class="nfl-kpi"><small>AFC</small><b>'+teams.filter(x=>String(x.conference||'').toUpperCase().includes('AFC')).length+'</b><span>clubs</span></div><div class="nfl-kpi"><small>NFC</small><b>'+teams.filter(x=>String(x.conference||'').toUpperCase().includes('NFC')).length+'</b><span>clubs</span></div><div class="nfl-kpi"><small>SELECTED</small><b>'+esc(profile.abbreviation||'—')+'</b><span>'+esc(profile.name||'choose a club')+'</span></div></div><div class="nfl-team-grid">'+(tiles||'<div class="nfl-empty">Team data is loading.</div>')+'</div>');
+  }
+
+  if(tab==='Players'){
+    const source=squad.length?squad:gamePlayers;
+    const cards=source.slice(0,90).map(player=>{
+      const ss=player.season_stats&&typeof player.season_stats==='object'?player.season_stats:{};
+      const vals=Object.entries(ss).filter(([,v])=>v!==null&&v!==undefined&&typeof v!=='object').slice(0,3);
+      return '<article class="nfl-player-card">'+this.nflPlayerPhoto(player,'roster')+'<h3>'+esc(player.name||player.full_name||'Player')+'</h3><small>'+esc([player.position_abbreviation||player.position,player.number?'#'+player.number:''].filter(Boolean).join(' · '))+'</small>'+(vals.length?'<div class="nfl-player-stats">'+vals.map(([k,v])=>'<span><b>'+esc(v)+'</b><small>'+esc(this.prettyKey(k))+'</small></span>').join('')+'</div>':'')+'</article>';
+    }).join('');
+    return shell('NFL Players',profile.name?'Current '+profile.name+' roster with available season numbers.':'Choose a team for its full roster; otherwise selected-game players are shown when available.','<div class="nfl-kpis"><div class="nfl-kpi"><small>ROSTER</small><b>'+source.length+'</b><span>players shown</span></div><div class="nfl-kpi"><small>TEAM</small><b>'+esc(profile.abbreviation||'—')+'</b><span>'+esc(profile.name||'not selected')+'</span></div><div class="nfl-kpi"><small>LEADERS</small><b>'+teamLeaders.length+'</b><span>season leaders</span></div><div class="nfl-kpi"><small>INJURIES</small><b>'+teamInjuries.length+'</b><span>reported</span></div></div><div class="nfl-player-grid">'+(cards||'<div class="nfl-empty">Choose an NFL team to load its roster.</div>')+'</div>');
+  }
+
+  if(tab==='Stats'){
+    const leaders=(teamLeaders.length?teamLeaders:gameLeaders).slice(0,12).map(row=>'<article class="nfl-leader">'+this.nflPlayerPhoto(row,'small')+'<div><small>'+esc(row.label||row.group||'LEADER')+'</small><b>'+esc(row.player_name||row.name||row.full_name||'Player')+'</b><strong>'+esc(row.value||row.display_value||this.itemValue(row)||'—')+'</strong></div></article>').join('');
+    const source=teamStats.length?teamStats:gameStats;
+    const rows=source.slice(0,100).map(row=>{const label=row.label||row.group||row.position_abbreviation||'NFL';const raw=row.value!==undefined&&row.value!==''?row.value:this.itemValue(row);const value=raw!==undefined&&raw!==null&&raw!==''&&String(raw)!=='—'&&String(raw)!==String(label)?raw:'';return '<div class="nfl-stat-row"><b>'+esc(row.player_name||row.full_name||row.name||'Statistic')+'</b><div class="nfl-stat-meta"><span>'+esc(label)+'</span>'+(value!==''?'<strong>'+esc(value)+'</strong>':'')+'</div></div>';}).join('');
+    return shell('NFL Statistics','Passing, rushing, receiving, defense and team metrics from the connected NFL data feeds.','<div class="nfl-kpis"><div class="nfl-kpi"><small>STAT ROWS</small><b>'+source.length+'</b><span>available</span></div><div class="nfl-kpi"><small>LEADERS</small><b>'+((teamLeaders.length?teamLeaders:gameLeaders).length)+'</b><span>loaded</span></div><div class="nfl-kpi"><small>TEAM</small><b>'+esc(profile.abbreviation||'—')+'</b><span>'+esc(profile.name||'game data')+'</span></div><div class="nfl-kpi"><small>INJURIES</small><b>'+((teamInjuries.length?teamInjuries:gameInjuries).length)+'</b><span>records</span></div></div>'+(leaders?'<section class="nfl-card"><header><b>LEADERS</b><span>'+esc(profile.name||'Current game')+'</span></header><div class="nfl-leaders">'+leaders+'</div></section>':'')+'<section class="nfl-card"><header><b>STATISTICS</b><span>'+esc(profile.name||'Current game')+'</span></header><div class="nfl-stat-table">'+(rows||'<div class="nfl-empty">Choose a team or open a game to load statistics.</div>')+'</div></section>');
+  }
+
+  if(tab==='News'){
+    const cards=news.map(row=>'<button class="nfl-news" '+(row.game_id?'data-live-game="'+esc(row.game_id)+'"':'')+'><small>'+esc(String(row.kind||'UPDATE').toUpperCase())+'</small><h3>'+esc(row.title||'NFL update')+'</h3><p>'+esc(row.summary||'Game preview or recap information.')+'</p><footer>'+esc(row.published||'')+(row.game_id?' · OPEN GAME ›':'')+'</footer></button>').join('');
+    return shell('NFL News & Game Stories','NFL game previews and recaps linked directly to the relevant Game Centre.','<div class="nfl-kpis"><div class="nfl-kpi"><small>STORIES</small><b>'+news.length+'</b><span>loaded</span></div><div class="nfl-kpi"><small>PREVIEWS</small><b>'+news.filter(x=>x.kind==='preview').length+'</b><span>upcoming</span></div><div class="nfl-kpi"><small>RECAPS</small><b>'+news.filter(x=>x.kind==='recap').length+'</b><span>completed</span></div><div class="nfl-kpi"><small>LIVE</small><b>'+live.length+'</b><span>games now</span></div></div><div class="nfl-news-grid">'+(cards||'<div class="nfl-empty">No NFL stories are available in the current feed.</div>')+'</div>');
+  }
+
+  if(tab==='My Team'){
+    const teamId=String(profile.team_id||'');
+    const games=[...live,...fixtures,...results].filter((g,i,a)=>a.findIndex(x=>String(x.game_id)===String(g.game_id))===i).filter(g=>String(g.home_team_id||'')===teamId||String(g.away_team_id||'')===teamId||g.home_team===profile.name||g.away_team===profile.name);
+    const standing=profile.standing||standings.find(x=>String(x.team_id||'')===teamId)||{};
+    const isFavourite=favourites.some(item=>item.sport==='nfl'&&String(item.team_id)===teamId);
+    const fav='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b style="font-size:.82rem;letter-spacing:.07em">MY FAVOURITES '+favourites.length+'/3</b>'+favourites.map(item=>'<button class="my-favourite" data-open-favourite="'+esc(item.sport)+'|'+esc(item.team_id)+'">'+esc(item.team)+'</button>').join('')+(!isFavourite&&favourites.length<3&&teamId?'<button class="my-action" data-add-favourite="'+esc(teamId)+'">★ SAVE '+esc(profile.name||'TEAM')+'</button>':'')+(isFavourite?'<button class="my-action" data-remove-favourite="'+esc(teamId)+'">REMOVE FAVOURITE</button>':'')+'</div>';
+    if(!teamId)return shell('My NFL Team','Select a team from the top selector or Teams/Standings to build your NFL club dashboard.','<div class="nfl-empty">Choose an NFL team to load its complete team hub.</div>');
+    const roster=squad.slice(0,24).map(p=>'<article class="nfl-leader">'+this.nflPlayerPhoto(p,'small')+'<div><b>'+esc(p.name||'Player')+'</b><small>'+esc([p.position_abbreviation||p.position,p.number?'#'+p.number:''].filter(Boolean).join(' · '))+'</small></div></article>').join('');
+    const leaders=teamLeaders.slice(0,9).map(row=>'<article class="nfl-leader">'+this.nflPlayerPhoto(row,'small')+'<div><small>'+esc(row.label||'LEADER')+'</small><b>'+esc(row.player_name||row.name||'Player')+'</b><strong>'+esc(row.value||this.itemValue(row)||'—')+'</strong></div></article>').join('');
+    const injuries=teamInjuries.slice(0,24).map(row=>'<div class="nfl-injury-row"><b>'+esc(row.player_name||row.name||'Player')+'</b><span>'+esc(row.status||row.injury||row.injury_status||'Injury report')+'</span></div>').join('');
+    const statRows=teamStats.slice(0,16).map(row=>'<div class="nfl-stat-row"><b>'+esc(row.name||row.label||row.player_name||'Statistic')+'</b><div class="nfl-stat-meta"><span>'+esc(row.group||row.category||'Team')+'</span><strong>'+esc(row.value||row.display_value||this.itemValue(row)||'—')+'</strong></div></div>').join('');
+    return shell(esc(profile.name||'My NFL Team'),'Your NFL team hub with record, next game, roster, season leaders, team statistics and injury report.',fav+'<div class="nfl-team-focus">'+(profile.logo?'<img src="'+esc(profile.logo)+'" alt="">':'')+'<div><small style="color:#68d4ff">MY NFL TEAM</small><h2>'+esc(profile.name||'Team')+'</h2><p>'+esc([profile.conference,profile.division,profile.location].filter(Boolean).join(' · '))+'</p></div><div class="nfl-focus-record"><b>'+esc(standing.record||standing.short_record||'—')+'</b><small>'+esc(standing.formatted_rank||standing.division||'Season record')+'</small></div></div><div class="nfl-grid"><section class="nfl-card"><header><b>SCHEDULE & RESULTS</b><span>'+games.length+' games loaded</span></header><div class="nfl-game-list">'+(games.slice(0,10).map(g=>this.nflGameRow(g)).join('')||'<div class="nfl-empty">No team games loaded.</div>')+'</div></section><section class="nfl-card"><header><b>SEASON SNAPSHOT</b><span>'+esc(profile.abbreviation||'')+'</span></header><div class="nfl-stat-table">'+[['Record',standing.record],['Conference Rank',standing.conference_rank],['Division Rank',standing.division_rank],['Streak',standing.streak],['Home',standing.home_record],['Away',standing.away_record],['Playoff Seed',standing.playoff_seed]].filter(([,v])=>v!==null&&v!==undefined&&v!=='').map(([k,v])=>'<div class="nfl-stat-row"><b>'+esc(k)+'</b><div class="nfl-stat-meta"><span></span><strong>'+esc(v)+'</strong></div></div>').join('')+'</div></section></div>'+(leaders?'<section class="nfl-card"><header><b>TEAM LEADERS</b><span>Season</span></header><div class="nfl-leaders">'+leaders+'</div></section>':'')+'<section class="nfl-card"><header><b>ROSTER</b><span>'+squad.length+' players</span></header><div class="nfl-leaders">'+(roster||'<div class="nfl-empty">Roster loading.</div>')+'</div></section>'+(statRows?'<section class="nfl-card"><header><b>TEAM STATISTICS</b><span>Season</span></header><div class="nfl-stat-table">'+statRows+'</div></section>':'')+'<section class="nfl-card"><header><b>INJURY REPORT</b><span>'+teamInjuries.length+' listed</span></header>'+(injuries||'<div class="nfl-empty">No published injuries.</div>')+'</section>');
+  }
+
+  return '';
+};
+
+const usaBaseLivePage=UsaSportsHubPanel.prototype.livePage;
+UsaSportsHubPanel.prototype.livePage=function(s,items,sensor){
+  if(this.sport==='nfl')return this.nflLivePage(s,items,sensor);
+  return usaBaseLivePage.call(this,s,items,sensor);
+};
+
 const usaBaseDataPage=UsaSportsHubPanel.prototype.dataPage;
 const usaBaseRender=UsaSportsHubPanel.prototype.render;
 const usaBaseSelectTeam=UsaSportsHubPanel.prototype.selectTeam;
@@ -640,6 +786,7 @@ UsaSportsHubPanel.prototype.selectTeam=function(team){
 };
 UsaSportsHubPanel.prototype.dataPage=function(s,tab,items,sensor,entity,score){
   if(this.sport==='mlb')return this.mlbDataPage(s,tab,items,sensor,entity,score);
+  if(this.sport==='nfl')return this.nflDataPage(s,tab,items,sensor,entity,score);
   if(tab!=='My Team')return usaBaseDataPage.call(this,s,tab,items,sensor,entity,score);
   const profile=sensor('team_profile')?.attributes?.team_profile||{};
   const squad=sensor('team_squad')?.attributes?.team_squad||[];
@@ -673,6 +820,17 @@ UsaSportsHubPanel.prototype.render=function(){
       content.insertAdjacentHTML('beforeend',html);
     }
   }
+  if(this.sport==='nfl'&&this.tab==='Overview'&&!this.selectedLiveGame){
+    const content=this.shadowRoot.querySelector('.content');
+    const notice=content?.querySelector('.notice');
+    if(content){
+      const sensor=section=>this._hass?.states?.[`sensor.usa_sports_hub_nfl_${section}`];
+      const items=section=>sensor(section)?.attributes?.[section]||[];
+      const html=this.nflOverviewPage(SPORTS.nfl,items,sensor);
+      [...content.children].filter(node=>node!==notice).forEach(node=>node.remove());
+      content.insertAdjacentHTML('beforeend',html);
+    }
+  }
   if(!this.shadowRoot.querySelector('#usa-team-button-style')){const style=document.createElement('style');style.id='usa-team-button-style';style.textContent='.my-team-shell .my-action,.my-team-shell .my-favourite{border-radius:6px!important;border:1px solid #13b9f5!important;background:linear-gradient(135deg,#082b4a,#041a30)!important;box-shadow:inset 0 1px #ffffff22,0 4px 14px #0007;color:#f7fbff!important;text-transform:uppercase;letter-spacing:.04em}.my-team-shell .my-action{background:linear-gradient(135deg,#e21b3c,#a70926)!important;border-color:#ffced7!important}.my-team-shell .my-favourite:hover,.my-team-shell .my-action:hover{transform:translateY(-1px);filter:brightness(1.18);box-shadow:0 0 16px #16c7ff66}';this.shadowRoot.append(style);}
   const teamTitle=this.shadowRoot.querySelector('.my-title');if(teamTitle&&!teamTitle.querySelector('.team-load-note'))teamTitle.insertAdjacentHTML('beforeend','<small class="team-load-note" style="display:block;margin-top:10px;color:#7fcdf4">Team details refresh in the background and can take up to 30 seconds to populate.</small>');
   this.shadowRoot.querySelectorAll('[data-add-favourite]').forEach(button=>button.addEventListener('click',()=>this._hass?.callService('usa_sports_hub','add_team_favourite',{sport:this.sport,team_id:button.dataset.addFavourite,team:this.team}).catch(err=>console.warn(err))));
@@ -681,6 +839,9 @@ UsaSportsHubPanel.prototype.render=function(){
   if(this.sport==='mlb'){
     this.shadowRoot.querySelectorAll('[data-live-game]').forEach(button=>{if(!button.dataset.mlbBound){button.dataset.mlbBound='1';button.addEventListener('click',()=>this.openLiveGame(button.dataset.liveGame));}});
     this.shadowRoot.querySelectorAll('[data-mlb-team-id]').forEach(button=>button.addEventListener('click',()=>{const teamId=button.dataset.mlbTeamId,teamName=button.dataset.mlbTeamName||'';if(!teamId)return;this.team=teamName;localStorage.setItem('usa_sports_hub_team',teamName);this.tab='My Team';localStorage.setItem('usa_sports_hub_mlb_tab','My Team');this._hass?.callService('usa_sports_hub','select_team',{sport:'mlb',team_id:teamId}).catch(err=>console.warn(err));this.render();}));
+  }
+  if(this.sport==='nfl'){
+    this.shadowRoot.querySelectorAll('[data-nfl-team-id]').forEach(button=>button.addEventListener('click',()=>{const teamId=button.dataset.nflTeamId,teamName=button.dataset.nflTeamName||'';if(!teamId)return;this.team=teamName;localStorage.setItem('usa_sports_hub_team',teamName);this.tab='My Team';localStorage.setItem('usa_sports_hub_nfl_tab','My Team');this._hass?.callService('usa_sports_hub','select_team',{sport:'nfl',team_id:teamId}).catch(err=>console.warn(err));this.render();}));
   }
 };
 customElements.define('usa-sports-hub-panel',UsaSportsHubPanel);
