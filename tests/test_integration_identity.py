@@ -70,3 +70,9 @@ class IntegrationIdentityTests(unittest.TestCase):
             '"save_ui_preferences":',
         ):
             self.assertNotIn(obsolete, setup)
+
+    def test_sensor_package_exports_the_existing_platform_module(self):
+        source = Path("custom_components/usa_sports_hub/sensors/__init__.py").read_text(encoding="utf-8")
+
+        self.assertIn("from .usa_sports import async_setup_entry", source)
+        self.assertNotIn("from .sensor import async_setup_entry", source)
