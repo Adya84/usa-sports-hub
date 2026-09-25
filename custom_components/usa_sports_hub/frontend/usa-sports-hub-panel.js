@@ -291,6 +291,7 @@ class UsaSportsHubPanel extends HTMLElement {
     const odds=this.sensorData(sensor,'odds','object');
     const stadium=this.sensorData(sensor,'stadium','object');
     const ticker=this.sensorData(sensor,'ticker');
+    const related=this.sensorData(sensor,'related');
     const status=selected.is_live?'LIVE':(selected.is_final?'FINAL':'GAME CENTRE');
     const metric=(label,value,sub)=>'<article><small>'+label+'</small><b>'+esc(value)+'</b><span>'+esc(sub||'')+'</span></article>';
     const metrics=[
@@ -300,7 +301,8 @@ class UsaSportsHubPanel extends HTMLElement {
       metric('LINEUPS',lineups.length,'records'),
       metric('SCORING',scoring.length,'events'),
       metric('INJURIES',injuries.length,'records'),
-      metric('LEADERS',leaders.length,'records')
+      metric('LEADERS',leaders.length,'records'),
+      metric('RELATED',related.length,'records')
     ];
     if(this.sport==='nfl')metrics.push(metric('DRIVES',drives.length,'possessions'));
     const section=(title,body,count)=>'<article class="game-section"><header><b>'+title+'</b>'+(count!==undefined?'<span>'+esc(count)+'</span>':'')+'</header><div class="game-section-body">'+body+'</div></article>';
@@ -340,6 +342,7 @@ class UsaSportsHubPanel extends HTMLElement {
         section('VENUE','<div class="info-grid">'+venueInfo+'</div>')+
         section('ODDS','<div class="info-grid">'+oddsInfo+'</div>')+
         section('LIVE TICKER',this.detailRows(ticker,30)||'<div class="empty-live">No ticker items supplied.</div>',ticker.length)+
+        section('RELATED GAME DATA',this.detailRows(related,40)||'<div class="empty-live">No related game data supplied.</div>',related.length)+
       '</div></section>';
   }
 
