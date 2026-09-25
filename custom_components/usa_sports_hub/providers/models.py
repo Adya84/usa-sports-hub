@@ -375,3 +375,41 @@ def compact_ts_news(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
             if len(result) >= 20:
                 return result
     return result
+
+
+def compact_espn_news(league: str, payload: dict[str, Any]) -> list[dict[str, Any]]:
+    """Convert ESPN's league headline feed to compact sensor-safe cards."""
+    articles = payload.get("articles") if isinstance(payload, dict) else []
+    if not isinstance(articles, list):
+        return []
+
+    result: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for article in articles:
+        if not isinstance(article, dict):
+            continue
+        title = str(article.get("headline") or "").strip()
+        if not title or title in seen:
+            continue
+        seen.add(title)
+        images = article.get("images") if isinstance(article.get("images"), list) else []
+        first_image = images[0] if images and isinstance(images[0], dict) else {}
+        links = article.get("links") if isinstance(article.get("links"), dict) else {}
+        web_link = links.get("web") if isinstance(links.get("web"), dict) else {}
+        result.append(
+            {
+                "id": str(article.get("id") or ""),
+                "title": title,
+                "summary": str(article.get("description") or "")[:400],
+                "url": web_link.get("href"),
+                "image": first_image.get("url"),
+                "kind": "headline",
+                "source": "ESPN",
+                "league": league.upper(),
+                "published": article.get("published") or article.get("lastModified"),
+                "byline": article.get("byline"),
+            }
+        )
+        if len(result) >= 20:
+            break
+    return result

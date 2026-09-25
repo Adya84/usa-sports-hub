@@ -271,6 +271,10 @@ class UsaSportsHubPanel extends HTMLElement {
 
   gameCentre(s,items,sensor){
     if(this.sport==='mlb')return this.mlbGameCentre(s,items,sensor);
+    return this.richGameCentre(s,items,sensor);
+  }
+
+  richGameCentre(s,items,sensor){
     const all=[...(items('live')||[]),...(items('fixtures')||[]),...(items('results')||[])];
     const basic=all.find(g=>String(g.game_id)===String(this.selectedLiveGame))||{};
     const detail=this.sensorData(sensor,'game_detail','object');
@@ -323,8 +327,14 @@ class UsaSportsHubPanel extends HTMLElement {
     if(this.sport==='nba')sportFeature=section('QUARTERS / PERIODS',periodRows,periods.length);
     if(this.sport==='mlb')sportFeature=section('INNINGS / LINE SCORE',periodRows,periods.length);
     if(this.sport==='nhl')sportFeature=section('PERIODS / GAME FLOW',periodRows,periods.length);
-    return '<section class="game-centre">'+
+    const comparison=(label,away,home)=>'<div class="rich-comparison-row"><b>'+esc(away||'–')+'</b><span>'+esc(label)+'</span><b>'+esc(home||'–')+'</b></div>';
+    const awayStanding=(items('standings')||[]).find(row=>row.team===selected.away_team)||{};
+    const homeStanding=(items('standings')||[]).find(row=>row.team===selected.home_team)||{};
+    const gameDetails=[selected.venue||stadium.name,[selected.location,stadium.city,stadium.state].filter(Boolean).join(', '),(selected.broadcasts||[]).join(', ')].filter(Boolean);
+    const situationText=this.pick(situations[0]||{},['description','name','clock_label','inning_ordinal','period_label'])||selected.status_detail||'Waiting for live game updates.';
+    return '<style>.rich-game-layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(270px,.55fr);gap:14px}.rich-game-main{min-width:0}.rich-game-aside{display:grid;align-content:start;gap:12px}.rich-game-aside .game-section{min-width:0}.rich-game-aside .game-section-body{max-height:none}.rich-comparison-row{display:grid;grid-template-columns:1fr minmax(70px,auto) 1fr;gap:8px;padding:10px 12px;border-bottom:1px solid #ffffff12;text-align:center}.rich-comparison-row span{color:#8faac3;font-size:.75rem}.rich-comparison-row b:first-child{text-align:left}.rich-comparison-row b:last-child{text-align:right}@media(max-width:1000px){.rich-game-layout{grid-template-columns:1fr}.rich-game-aside{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:700px){.rich-game-aside{grid-template-columns:1fr}}</style><section class="game-centre rich-game-centre '+esc(this.sport)+'">'+
       '<div class="game-centre-top"><button class="live-back" data-live-close>← BACK</button><span class="game-status '+(selected.is_live?'live':'')+'">'+(selected.is_live?'<i></i> ':'')+status+'</span><small>'+(loaded?'FULL GAME DATA LOADED':'LOADING FULL GAME DATA…')+'</small></div>'+
+      '<div class="rich-game-layout"><main class="rich-game-main">'+
       '<div class="game-scoreboard"><div class="team-side">'+this.gameLogo(selected.away_logo,selected.away_team)+'<h2>'+esc(selected.away_team||'Away')+'</h2><small>'+esc(selected.away_abbreviation||'')+'</small></div><div class="score-core"><span>'+esc([selected.period_label,selected.clock].filter(Boolean).join(' · '))+'</span><strong>'+esc(selected.away_score??'–')+' <i>–</i> '+esc(selected.home_score??'–')+'</strong><small>'+esc(selected.status_detail||'')+'</small></div><div class="team-side">'+this.gameLogo(selected.home_logo,selected.home_team)+'<h2>'+esc(selected.home_team||'Home')+'</h2><small>'+esc(selected.home_abbreviation||'')+'</small></div></div>'+
       '<div class="venue-strip">'+esc([selected.venue,selected.location,(selected.broadcasts||[]).join(', ')].filter(Boolean).join(' · '))+'</div>'+
       this.sportSituation(selected,box,situations)+
@@ -343,7 +353,11 @@ class UsaSportsHubPanel extends HTMLElement {
         section('ODDS','<div class="info-grid">'+oddsInfo+'</div>')+
         section('LIVE TICKER',this.detailRows(ticker,30)||'<div class="empty-live">No ticker items supplied.</div>',ticker.length)+
         section('RELATED GAME DATA',this.detailRows(related,40)||'<div class="empty-live">No related game data supplied.</div>',related.length)+
-      '</div></section>';
+      '</div></main><aside class="rich-game-aside">'+
+        section('GAME DETAILS','<div class="info-grid">'+(gameDetails.map((value,index)=>'<div class="info-cell"><small>'+(['VENUE','LOCATION','WATCH ON'][index])+'</small><b>'+esc(value)+'</b></div>').join('')||'<div class="empty-live">Details are loading.</div>')+'</div>')+
+        section('CURRENT SITUATION','<div class="detail-row"><b>'+esc(situationText)+'</b><strong>'+esc([selected.period_label,selected.clock].filter(Boolean).join(' · ')||status)+'</strong></div>')+
+        section('TEAM COMPARISON',comparison('Record',awayStanding.record||awayStanding.short_record,homeStanding.record||homeStanding.short_record)+comparison('Home / Away',awayStanding.away_record||awayStanding.short_away_record,homeStanding.home_record||homeStanding.short_home_record)+comparison('Last 10',awayStanding.last_ten||awayStanding.last_ten_games_record,homeStanding.last_ten||homeStanding.last_ten_games_record)+comparison('Streak',awayStanding.streak,homeStanding.streak))+
+      '</aside></div></section>';
   }
 
   sportOverviewExtras(items,sensor){

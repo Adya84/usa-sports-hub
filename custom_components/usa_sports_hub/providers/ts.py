@@ -9,6 +9,7 @@ from urllib.parse import urlencode
 
 from .base import ProviderClient
 from .models import (
+    compact_espn_news,
     compact_ts_news,
     normalize_ts_event,
     normalize_ts_standing,
@@ -19,6 +20,13 @@ from .models import (
 
 API_BASE = "https://api." + "the" + "score.com"
 WEB_API_BASE = "https://www." + "the" + "score.com/api"
+ESPN_NEWS_BASE = "https://site.api.espn.com/apis/site/v2/sports"
+ESPN_NEWS_PATHS = {
+    "nfl": "football/nfl",
+    "nba": "basketball/nba",
+    "mlb": "baseball/mlb",
+    "nhl": "hockey/nhl",
+}
 MLB_STATS_BASE = "https://statsapi.mlb.com/api/v1"
 MLB_LIVE_BASE = "https://statsapi.mlb.com/api/v1.1"
 MLB_HEADSHOT_BASE = "https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people"
@@ -173,10 +181,28 @@ class TSProvider(ProviderClient):
         return [normalize_ts_standing(item, self.league) for item in rows]
 
     async def async_news(self) -> list[dict[str, Any]]:
-        # TS event payloads expose preview/recap metadata.  This keeps the
-        # integration entirely off ESPN while still supplying useful league news.
-        payload = await self.async_get_json(self._events_url(past_days=7, future_days=2))
-        return compact_ts_news(payload if isinstance(payload, list) else [])
+        """Combine ESPN league headlines with game-linked previews and recaps."""
+        headline_path = ESPN_NEWS_PATHS.get(self.league)
+        responses = await asyncio.gather(
+            self.async_get_json(self._events_url(past_days=7, future_days=2)),
+            self.async_get_json(f"{ESPN_NEWS_BASE}/{headline_path}/news?limit=20") if headline_path else None,
+            return_exceptions=True,
+        )
+        event_payload, headline_payload = responses
+        event_news = compact_ts_news(event_payload if isinstance(event_payload, list) else [])
+        headline_news = compact_espn_news(self.league, headline_payload if isinstance(headline_payload, dict) else {})
+
+        merged: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for item in [*headline_news, *event_news]:
+            title = str(item.get("title") or "").strip()
+            if not title or title in seen:
+                continue
+            seen.add(title)
+            merged.append(item)
+            if len(merged) >= 20:
+                break
+        return merged
 
     async def async_teams(self) -> list[dict[str, Any]]:
         standings = await self.async_get_json(f"{self.base}/standings")

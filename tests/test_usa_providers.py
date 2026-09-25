@@ -14,6 +14,7 @@ SPEC.loader.exec_module(models)
 normalize_event = models.normalize_ts_event
 normalize_standing = models.normalize_ts_standing
 compact_news = models.compact_ts_news
+compact_espn_news = models.compact_espn_news
 normalize_team_detail = models.normalize_ts_team_detail
 
 
@@ -70,6 +71,12 @@ class ProviderModelTests(unittest.TestCase):
         self.assertIn("async def async_team_detail", source)
         for suffix in ("/players", "/statistics", "/leaders", "/injuries"):
             self.assertIn(f'{{self.base}}/teams/{{team_id}}{suffix}', source)
+
+    def test_provider_fetches_a_league_specific_espn_headline_feed(self):
+        source = Path("custom_components/usa_sports_hub/providers/ts.py").read_text(encoding="utf-8")
+
+        self.assertIn("site.api.espn.com/apis/site/v2/sports", source)
+        self.assertIn("compact_espn_news", source)
 
     def test_mlb_detail_does_not_make_unscoped_fallback_requests(self):
         source = Path("custom_components/usa_sports_hub/providers/ts.py").read_text(encoding="utf-8")
@@ -142,6 +149,28 @@ class ProviderModelTests(unittest.TestCase):
         self.assertEqual(items[0]["title"], "Game recap")
         self.assertEqual(items[0]["kind"], "recap")
         self.assertIn("score.com/articles/1", items[0]["url"])
+
+    def test_espn_headlines_become_compact_sport_news_cards(self):
+        items = compact_espn_news(
+            "nfl",
+            {
+                "articles": [
+                    {
+                        "id": 42,
+                        "headline": "Headline",
+                        "description": "Story summary",
+                        "published": "2026-09-25T00:00:00Z",
+                        "byline": "Reporter",
+                        "images": [{"url": "https://images.example/story.jpg"}],
+                        "links": {"web": {"href": "https://www.espn.com/nfl/story/42"}},
+                    }
+                ]
+            },
+        )
+        self.assertEqual(items[0]["title"], "Headline")
+        self.assertEqual(items[0]["source"], "ESPN")
+        self.assertEqual(items[0]["image"], "https://images.example/story.jpg")
+        self.assertEqual(items[0]["url"], "https://www.espn.com/nfl/story/42")
 
 
 if __name__ == "__main__":
