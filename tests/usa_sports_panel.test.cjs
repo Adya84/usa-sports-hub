@@ -133,6 +133,13 @@ test('team selection and favourites work independently for every sport', () => {
   }
 });
 
+test('My Team always exposes an add-favourite action while team data loads', () => {
+  const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
+  for (const value of ['usaFavouriteQuickAdd', 'selected_team_id', 'data-add-favourite', 'ADD SELECTED TEAM']) {
+    assert.ok(source.includes(value), value + ' should keep the favourite action available during refresh');
+  }
+});
+
 test('non-MLB selected games hide another game and raw API dumps while loading', () => {
   const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
   for (const value of ['usaRichGameCentre', 'selectedGameKey', 'Loading full game data — this can take up to 30 seconds', 'safeSensor', "const extras=this.sport==='nfl'&&drives.length", 'cleanLineups', 'cleanPlayers', 'team_full_name']) {

@@ -1124,6 +1124,21 @@ UsaSportsHubPanel.prototype.render=function(){
       this.render();
     });
   });
+  const usaFavouriteQuickAdd=this._hass?.states?.[`sensor.usa_sports_hub_${this.sport}_status`]?.attributes;
+  const selectedTeamId=String(usaFavouriteQuickAdd?.selected_team_id||'');
+  const sportFavourites=(usaFavouriteQuickAdd?.team_favourites||[]).filter(item=>item.sport===this.sport);
+  const alreadyFavourite=sportFavourites.some(item=>String(item.team_id)===selectedTeamId);
+  if(this.tab==='My Team'&&selectedTeamId&&!alreadyFavourite&&sportFavourites.length<3&&!this.shadowRoot.querySelector('[data-add-favourite]')){
+    const team=this.team||this.shadowRoot.querySelector('[data-team]')?.value||'Selected team';
+    const action=document.createElement('button');
+    action.className='my-action usa-favourite-quick-add';
+    action.dataset.addFavourite=selectedTeamId;
+    action.textContent='★ ADD SELECTED TEAM';
+    action.style.cssText='margin:12px;padding:10px 14px;border:1px solid #ffced7;border-radius:7px;background:#c91535;color:#fff;font-weight:900;cursor:pointer';
+    action.addEventListener('click',()=>this._hass?.callService('usa_sports_hub','add_team_favourite',{sport:this.sport,team_id:selectedTeamId,team}).catch(err=>console.warn('USA Sports Hub favourite save failed',err)));
+    const target=this.shadowRoot.querySelector('.my-favourites,.mlb-site,.nfl-site,.nba-site,.nhl-site');
+    target?.insertAdjacentElement('afterbegin',action);
+  }
 };
 
 const usaFavouriteSensor=(sport,sensor)=>section=>{
