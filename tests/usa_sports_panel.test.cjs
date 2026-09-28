@@ -112,6 +112,13 @@ test('NFL NBA and NHL clicked games use a polished sport-specific game centre', 
   assert.match(source, /return this\.richGameCentre/);
 });
 
+test('header displays a central under-construction notice without replacing controls', () => {
+  const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
+  assert.match(source, /className='construction-notice'/);
+  assert.match(source, /UNDER CONSTRUCTION/);
+  assert.match(source, /New features are being built/);
+});
+
 test('non-MLB selected games hide another game and raw API dumps while loading', () => {
   const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
   for (const value of ['usaRichGameCentre', 'selectedGameKey', 'Loading full game data — this can take up to 30 seconds', 'safeSensor', "const extras=this.sport==='nfl'&&drives.length", 'cleanLineups', 'cleanPlayers', 'team_full_name']) {

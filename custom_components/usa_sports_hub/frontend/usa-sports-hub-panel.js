@@ -1096,4 +1096,18 @@ UsaSportsHubPanel.prototype.render=function(){
     this.shadowRoot.querySelectorAll('[data-nhl-team-id]').forEach(button=>button.addEventListener('click',()=>{const teamId=button.dataset.nhlTeamId,teamName=button.dataset.nhlTeamName||'';if(!teamId)return;this.team=teamName;localStorage.setItem('usa_sports_hub_team',teamName);this.tab='My Team';localStorage.setItem('usa_sports_hub_nhl_tab','My Team');this._hass?.callService('usa_sports_hub','select_team',{sport:'nhl',team_id:teamId}).catch(err=>console.warn(err));this.render();}));
   }
 };
+
+const usaHeaderRender=UsaSportsHubPanel.prototype.render;
+UsaSportsHubPanel.prototype.render=function(){
+  usaHeaderRender.call(this);
+  const mast=this.shadowRoot?.querySelector('.mast');
+  if(!mast||mast.querySelector('.construction-notice'))return;
+  const notice=document.createElement('div');
+  notice.className='construction-notice';
+  notice.innerHTML='<b>⚠ UNDER CONSTRUCTION</b><small>New features are being built</small>';
+  mast.querySelector('.brand')?.insertAdjacentElement('afterend',notice);
+  const style=document.createElement('style');
+  style.textContent='.construction-notice{display:grid;justify-items:center;gap:2px;margin:0 auto;padding:8px 18px;border:1px solid #e3b34199;border-radius:999px;background:linear-gradient(135deg,#2a210c,#101b2c);box-shadow:0 0 18px #e3b34122;color:#ffe39a;text-align:center;line-height:1.05}.construction-notice b{font-size:.74rem;letter-spacing:.13em}.construction-notice small{color:#bbcae1;font-size:.64rem}@media(max-width:1050px){.construction-notice{display:none}}';
+  this.shadowRoot.append(style);
+};
 customElements.define('usa-sports-hub-panel',UsaSportsHubPanel);
