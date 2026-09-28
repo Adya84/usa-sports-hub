@@ -101,3 +101,13 @@ test('non-baseball selected games use the rich shared game-centre and favourites
   assert.match(source, /if\(this\.sport==='mlb'\)return this\.mlbGameCentre/);
   assert.match(source, /return this\.richGameCentre\(s,items,sensor\)/);
 });
+
+
+test('NFL NBA and NHL clicked games use the polished pro game centre', () => {
+  const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
+  for (const value of ['pro-score','pro-people','pro-leader','LATEST PLAY','PLAYERS & LINEUPS','TEAM COMPARISON','RELATED GAME DATA']) {
+    assert.ok(source.includes(value), value + ' should exist in the polished live game centre');
+  }
+  assert.match(source, /if\(this\.sport==='mlb'\)return this\.mlbGameCentre/);
+  assert.match(source, /return this\.richGameCentre/);
+});
