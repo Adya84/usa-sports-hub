@@ -316,9 +316,23 @@ class UsaSportsHubPanel extends HTMLElement {
       return '<div class="pro-stat"><b>'+esc(title)+'</b><div>'+pairs.map(([k,v])=>'<span><small>'+esc(this.prettyKey(k))+'</small><strong>'+esc(v)+'</strong></span>').join('')+'</div></div>';
     }).join('')||'<div class="pro-empty">No detailed statistics supplied yet.</div>';
 
-    const people=(lineups.length?lineups:players).filter(x=>x&&typeof x==='object').slice(0,42).map(row=>{
+    const isPlayerRow=row=>{
+      if(!row||typeof row!=='object')return false;
+      const name=personName(row);
+      const position=pick(row,['position_abbreviation','position','position_name']);
+      const number=pick(row,['jersey_number','number']);
+      return Boolean(name&&name!=='Player'&&(position||number));
+    };
+    // Lineup endpoints sometimes mix club, league and country records in with
+    // the starters. Prefer those only when they contain real player records;
+    // otherwise show the clean roster feed, just as the MLB view does.
+    const cleanLineups=lineups.filter(isPlayerRow);
+    const cleanPlayers=players.filter(isPlayerRow);
+    const peopleRows=cleanLineups.length?cleanLineups:cleanPlayers;
+    const people=peopleRows.slice(0,42).map(row=>{
       const name=personName(row),pos=pick(row,['position_abbreviation','position']),num=pick(row,['jersey_number','number']),head=imgFor(row);
-      return '<article class="pro-person">'+(head?'<img src="'+esc(head)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'<span class="pro-avatar">'+esc(String(name).charAt(0))+'</span>')+'<div><b>'+esc(name)+'</b><small>'+esc([pos,num?('#'+num):''].filter(Boolean).join(' · '))+'</small></div></article>';
+      const team=pick(row,['team_name','team','team_full_name']);
+      return '<article class="pro-person">'+(head?'<img src="'+esc(head)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'<span class="pro-avatar">'+esc(String(name).charAt(0))+'</span>')+'<div><b>'+esc(name)+'</b><small>'+esc([pos,num?('#'+num):'',team].filter(Boolean).join(' · '))+'</small></div></article>';
     }).join('')||'<div class="pro-empty">No player or lineup data supplied yet.</div>';
 
     const leaderCards=leaders.slice(0,12).map(row=>{
@@ -367,36 +381,34 @@ class UsaSportsHubPanel extends HTMLElement {
     if(this.sport==='nfl')metricData.push(['DRIVES',drives.length]);
     const metrics=metricData.map(([k,v])=>'<article><small>'+k+'</small><b>'+esc(v)+'</b></article>').join('');
 
-    const extras=[
-      this.sport==='nfl'&&drives.length?section('DRIVES & POSSESSIONS',this.detailRows(drives,32),drives.length,'extra'):'',
-      section('BOX SCORE DETAILS','<div class="pro-info-grid">'+(this.infoGrid(box,24)||'<div class="pro-empty">No box score details supplied.</div>')+'</div>',undefined,'extra'),
-      section('ODDS','<div class="pro-info-grid">'+(this.infoGrid(odds,16)||'<div class="pro-empty">No odds data supplied.</div>')+'</div>',undefined,'extra'),
-      section('LIVE TICKER',this.detailRows(ticker,30)||'<div class="pro-empty">No ticker data supplied.</div>',ticker.length,'extra'),
-      section('RELATED GAME DATA',this.detailRows(related,30)||'<div class="pro-empty">No related game data supplied.</div>',related.length,'extra')
-    ].filter(Boolean).join('');
+    // Keep raw provider metadata out of the game centre. These feeds often
+    // contain league records and stale event lists rather than this game.
+    const extras=this.sport==='nfl'&&drives.length
+      ? [section('DRIVES & POSSESSIONS',this.detailRows(drives,32),drives.length,'extra')]
+      : [];
 
     return '<style>'+
       '.pro-game{display:grid;gap:14px}.pro-top{display:flex;align-items:center;gap:12px}.pro-top .live-back{margin-right:auto}.pro-loaded{font-size:.78rem;color:#8da7bb}.pro-score{display:grid;grid-template-columns:1fr minmax(220px,.72fr) 1fr;align-items:center;border:1px solid #1d6285;border-radius:14px;background:linear-gradient(120deg,#06172a,#020b14);padding:24px;box-shadow:0 12px 30px #0007}.pro-team{text-align:center}.pro-team img,.pro-team .live-team-logo{width:88px;height:88px;margin:auto;object-fit:contain}.pro-team h2{font-size:1.6rem;margin:9px 0 2px}.pro-team small{color:#8fa9bf}.pro-score-core{text-align:center}.pro-score-core span{display:block;color:'+accent+';font-size:1rem;font-weight:950}.pro-score-core strong{display:block;font-size:3.7rem;line-height:1;margin:8px 0}.pro-score-core i{font-style:normal;color:#6d8395}.pro-score-core small{color:#b1c3d1;font-size:.95rem}.pro-sit{border:1px solid #1f6687;background:#06243c;border-radius:10px;padding:13px 16px;display:flex;justify-content:space-between;gap:14px}.pro-sit b{color:'+accent+'}.pro-metrics{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:8px}.pro-metrics article{border:1px solid #1c5573;background:#041524;border-radius:9px;padding:11px}.pro-metrics small{display:block;color:#79bddb;font-size:.7rem;font-weight:950}.pro-metrics b{display:block;font-size:1.35rem;margin-top:3px}.pro-layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(310px,.65fr);gap:14px}.pro-main,.pro-side{display:grid;align-content:start;gap:14px}.pro-card{border:1px solid #1a5271;border-radius:11px;background:#03101cef;overflow:hidden}.pro-card>header{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:linear-gradient(90deg,#073258,#061624);border-bottom:1px solid #1d6285}.pro-card h3{margin:0;font-size:.94rem;letter-spacing:.04em}.pro-card>header span{background:#0b5a84;border-radius:999px;padding:3px 9px;font-size:.72rem}.pro-body{padding:14px}.pro-last b{display:block;font-size:1.1rem}.pro-last small{display:block;color:#84a9c2;margin-top:6px}.pro-periods{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px}.pro-period{border:1px solid #183e55;background:#020b12;border-radius:8px;padding:10px;text-align:center}.pro-period small{display:block;color:#7faec8;font-size:.72rem}.pro-period b{font-size:1rem}.pro-period i{font-style:normal;color:#708a9c}.pro-stat{display:grid;grid-template-columns:minmax(190px,.8fr) minmax(0,1.4fr);gap:16px;padding:13px 0;border-bottom:1px solid #ffffff12}.pro-stat:last-child{border-bottom:0}.pro-stat>b{font-size:.98rem}.pro-stat>div{display:flex;justify-content:flex-end;gap:7px;flex-wrap:wrap}.pro-stat span{min-width:88px;border:1px solid #183c51;border-radius:7px;background:#020c14;padding:7px 9px;text-align:right}.pro-stat small{display:block;color:#5db8e3;font-size:.6rem;text-transform:uppercase}.pro-stat strong{font-size:.92rem}.pro-people{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.pro-person,.pro-leader{display:flex;align-items:center;gap:10px;border:1px solid #173e55;background:#041522;border-radius:9px;padding:10px}.pro-person img,.pro-leader img,.pro-avatar{width:48px;height:48px;border-radius:50%;object-fit:cover}.pro-avatar{display:grid;place-items:center;background:#123b55;font-weight:900}.pro-person b,.pro-person small,.pro-leader b,.pro-leader small,.pro-leader strong{display:block}.pro-person small,.pro-leader small{color:#91a9ba}.pro-leader strong{color:'+accent+';font-size:1.12rem}.pro-leaders{display:grid;gap:8px}.pro-list,.pro-play{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid #ffffff12}.pro-list:last-child,.pro-play:last-child{border-bottom:0}.pro-list small{display:block;color:#8ca5b7;margin-top:2px}.pro-list strong{color:'+accent+';text-align:right}.pro-list .warn{color:#ff8494}.pro-play b{min-width:82px;color:'+accent+'}.pro-play span{flex:1}.pro-info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.pro-info{padding:10px 0;border-bottom:1px solid #ffffff12}.pro-info small{display:block;color:#6fc7eb;text-transform:uppercase;font-size:.66rem}.pro-info b{display:block;margin-top:3px}.pro-compare{display:grid;grid-template-columns:1fr 90px 1fr;gap:8px;text-align:center;padding:10px 0;border-bottom:1px solid #ffffff12}.pro-compare b:first-child{text-align:left}.pro-compare b:last-child{text-align:right}.pro-compare span{color:#91a9ba;font-size:.78rem}.pro-empty{padding:18px;text-align:center;color:#8fa6b8}.pro-more{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.pro-more .pro-body{max-height:330px;overflow:auto}@media(max-width:1200px){.pro-metrics{grid-template-columns:repeat(4,1fr)}.pro-people{grid-template-columns:repeat(2,1fr)}}@media(max-width:1000px){.pro-layout{grid-template-columns:1fr}.pro-side{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:700px){.pro-score{grid-template-columns:1fr}.pro-score-core{order:-1;margin-bottom:14px}.pro-side,.pro-more{grid-template-columns:1fr}.pro-people{grid-template-columns:1fr}.pro-stat{grid-template-columns:1fr}.pro-stat>div{justify-content:flex-start}.pro-metrics{grid-template-columns:repeat(2,1fr)}}'+
       '</style><section class="game-centre pro-game '+esc(this.sport)+'">'+
-      '<div class="pro-top"><button class="live-back" data-live-close>← BACK</button><span class="game-status '+(game.is_live?'live':'')+'">'+(game.is_live?'<i></i> ':'')+status+'</span><small class="pro-loaded">'+(loaded?'FULL GAME DATA LOADED':'LOADING FULL GAME DATA…')+'</small></div>'+
+      '<div class="pro-top"><button class="live-back" data-live-close>← BACK</button><span class="game-status '+(game.is_live?'live':'')+'">'+(game.is_live?'<i></i> ':'')+status+'</span><small class="pro-loaded">'+(loaded?'FULL GAME DATA LOADED':'Loading full game data — this can take up to 30 seconds')+'</small></div>'+
       '<div class="pro-score"><div class="pro-team">'+this.gameLogo(game.away_logo,game.away_team)+'<h2>'+esc(game.away_team||'Away')+'</h2><small>'+esc(game.away_abbreviation||'')+'</small></div><div class="pro-score-core"><span>'+esc([game.period_label,game.clock].filter(Boolean).join(' · ')||status)+'</span><strong>'+esc(game.away_score??'–')+' <i>–</i> '+esc(game.home_score??'–')+'</strong><small>'+esc(game.status_detail||'')+'</small></div><div class="pro-team">'+this.gameLogo(game.home_logo,game.home_team)+'<h2>'+esc(game.home_team||'Home')+'</h2><small>'+esc(game.home_abbreviation||'')+'</small></div></div>'+
       '<div class="pro-sit"><b>'+esc(sitTitle)+'</b><span>'+esc(sitText)+'</span></div>'+
       '<div class="pro-metrics">'+metrics+'</div>'+
       '<div class="pro-layout"><main class="pro-main">'+
-        section('LATEST PLAY','<div class="pro-last"><b>'+esc(latestText)+'</b>'+(latestMeta?'<small>'+esc(latestMeta)+'</small>':'')+'</div>')+
-        section(this.sport==='nba'?'QUARTER SCORING':this.sport==='nhl'?'PERIOD SCORING':'QUARTER SCORING','<div class="pro-periods">'+periodCells+'</div>',periods.length)+
-        section('TEAM / PLAYER STATISTICS',statRows,stats.length)+
-        section('PLAYERS & LINEUPS','<div class="pro-people">'+people+'</div>',lineups.length||players.length)+
-        section('SCORING SUMMARY',scoringRows,scoring.length)+
-        section('PLAY-BY-PLAY',playRows,plays.length)+
+        (plays.length?section('LATEST PLAY','<div class="pro-last"><b>'+esc(latestText)+'</b>'+(latestMeta?'<small>'+esc(latestMeta)+'</small>':'')+'</div>'):'')+
+        (periods.length?section(this.sport==='nba'?'QUARTER SCORING':this.sport==='nhl'?'PERIOD SCORING':'QUARTER SCORING','<div class="pro-periods">'+periodCells+'</div>',periods.length):'')+
+        (stats.length?section('TEAM / PLAYER STATISTICS',statRows,stats.length):'')+
+        (peopleRows.length?section('PLAYERS & LINEUPS','<div class="pro-people">'+people+'</div>',peopleRows.length):'')+
+        (scoring.length?section('SCORING SUMMARY',scoringRows,scoring.length):'')+
+        (plays.length?section('PLAY-BY-PLAY',playRows,plays.length):'')+
       '</main><aside class="pro-side">'+
         section('GAME DETAILS',gameInfo||'<div class="pro-empty">Game details are loading.</div>')+
         section('TEAM COMPARISON',compare('Record',awayStanding.record||awayStanding.short_record,homeStanding.record||homeStanding.short_record)+compare('Home / Away',awayStanding.away_record||awayStanding.short_away_record,homeStanding.home_record||homeStanding.short_home_record)+compare('Last 10',awayStanding.last_ten||awayStanding.last_ten_games_record,homeStanding.last_ten||homeStanding.last_ten_games_record)+compare('Streak',awayStanding.streak,homeStanding.streak))+
-        section('GAME LEADERS','<div class="pro-leaders">'+leaderCards+'</div>',leaders.length)+
-        section('INJURIES',injuryRows,injuries.length)+
-        section('OFFICIALS',officialRows,officials.length)+
+        (leaders.length?section('GAME LEADERS','<div class="pro-leaders">'+leaderCards+'</div>',leaders.length):'')+
+        (injuries.length?section('INJURIES',injuryRows,injuries.length):'')+
+        (officials.length?section('OFFICIALS',officialRows,officials.length):'')+
       '</aside></div>'+
-      '<div class="pro-more">'+extras+'</div></section>';
+      (extras.length?'<div class="pro-more">'+extras.join('')+'</div>':'')+'</section>';
   }
 
   sportOverviewExtras(items,sensor){
@@ -526,6 +538,34 @@ UsaSportsHubPanel.prototype.mlbGameCentre=function(s,items,sensor){
     html=html.replace(/<section class="mlb-side-card"><h3>Current At Bat<\/h3>[\s\S]*?<\/section><section class="mlb-side-card"><h3>Team Comparison/, '<section class="mlb-side-card"><h3>Game Status</h3><div><b>'+esc(selected.is_final?'Final':'Pre-game')+'</b><span>At-bat, bases and count appear only while this game is live.</span></div></section><section class="mlb-side-card"><h3>Team Comparison');
   }
   return html;
+};
+/* Non-MLB guard: data is always scoped to the selected sport and game. */
+const usaRichGameCentre=UsaSportsHubPanel.prototype.richGameCentre;
+UsaSportsHubPanel.prototype.richGameCentre=function(s,items,sensor){
+  const selectedGameId=String(this.selectedLiveGame||'');
+  const selectedGameKey=this.sport+':'+selectedGameId;
+  const event=sensor('game_detail')?.attributes?.game_detail||{};
+  const activeDetailId=String(event.game_id||'');
+  const detailMatches=activeDetailId===selectedGameId;
+  const fields=['game_detail','box_score','play_by_play','drives','scoring','players','injuries','lineups','statistics','leaders','periods','officials','situations','related','odds','stadium','ticker'];
+  this._richGameDetailCache=this._richGameDetailCache||new Map();
+  if(activeDetailId){
+    const snapshot={};
+    for(const field of fields){
+      snapshot[field]=field==='game_detail' ? event : (sensor(field)?.attributes?.[field] ?? (['box_score','odds','stadium'].includes(field)?{}:[]));
+    }
+    this._richGameDetailCache.set(this.sport+':'+activeDetailId,snapshot);
+    while(this._richGameDetailCache.size>12)this._richGameDetailCache.delete(this._richGameDetailCache.keys().next().value);
+  }
+  const cachedSnapshot=this._richGameDetailCache.get(selectedGameKey);
+  const safeSensor=name=>{
+    const state=sensor(name);
+    if(!state||!fields.includes(name))return state;
+    if(detailMatches)return state;
+    const value=cachedSnapshot?.[name] ?? (['box_score','odds','stadium'].includes(name)?{}:[]);
+    return {...state,attributes:{...state.attributes,[name]:value}};
+  };
+  return usaRichGameCentre.call(this,s,items,safeSensor);
 };
 /* Live card override: place game state and score ahead of secondary metadata. */
 UsaSportsHubPanel.prototype.liveGameCard=function(game){

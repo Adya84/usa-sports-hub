@@ -69,10 +69,10 @@ test('NBA has dedicated pages, live centre and team navigation', () => {
   assert.match(source, /if\(this\.sport==='nba'\)return this\.nbaDataPage/);
 });
 
-test('Game Centre exposes every connected detail sensor including related data', () => {
+test('Game Centre keeps the sport-specific detail fields needed for a polished view', () => {
   const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
-  for (const value of ['box_score','play_by_play','statistics','players','lineups','scoring','injuries','leaders','periods','officials','situations','odds','stadium','ticker','related','RELATED GAME DATA']) {
-    assert.ok(source.includes(value), value + ' should be represented in the game centre');
+  for (const value of ['play_by_play','drives','statistics','players','lineups','scoring','injuries','leaders','periods','officials','situations','stadium']) {
+    assert.ok(source.includes(value), value + ' should support the game centre');
   }
 });
 
@@ -103,11 +103,18 @@ test('non-baseball selected games use sport-specific live-situation labels and f
 });
 
 
-test('NFL NBA and NHL clicked games use the polished pro game centre', () => {
+test('NFL NBA and NHL clicked games use a polished sport-specific game centre', () => {
   const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
-  for (const value of ['pro-score','pro-people','pro-leader','LATEST PLAY','PLAYERS & LINEUPS','TEAM COMPARISON','RELATED GAME DATA']) {
+  for (const value of ['pro-score','pro-people','pro-leader','LATEST PLAY','PLAYERS & LINEUPS','TEAM COMPARISON','DRIVES & POSSESSIONS']) {
     assert.ok(source.includes(value), value + ' should exist in the polished live game centre');
   }
   assert.match(source, /if\(this\.sport==='mlb'\)return this\.mlbGameCentre/);
   assert.match(source, /return this\.richGameCentre/);
+});
+
+test('non-MLB selected games hide another game and raw API dumps while loading', () => {
+  const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
+  for (const value of ['usaRichGameCentre', 'selectedGameKey', 'Loading full game data — this can take up to 30 seconds', 'safeSensor', "const extras=this.sport==='nfl'&&drives.length", 'cleanLineups', 'cleanPlayers', 'team_full_name']) {
+    assert.ok(source.includes(value), value + ' should protect non-MLB selected-game detail');
+  }
 });
