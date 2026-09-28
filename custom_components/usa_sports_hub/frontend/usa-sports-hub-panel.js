@@ -35,8 +35,8 @@ class UsaSportsHubPanel extends HTMLElement {
   }
   scalarPairs(x){
     if(!x||typeof x!=='object')return [];
-    const skip=new Set(['id','api_uri','url','href','link','source_url','source','website','web_url','created_at','updated_at','logos','images','headshot','image','colour_1','colour_2']);
-    return Object.entries(x).filter(([key,value])=>!skip.has(key)&&value!==null&&value!==undefined&&value!==''&&typeof value!=='object');
+    const skip=new Set(['id','api_uri','url','href','link','source_url','source','website','web_url','share_url','resource_uri','created_at','updated_at','logos','images','headshot','image','colour_1','colour_2']);
+    return Object.entries(x).filter(([key,value])=>!skip.has(key)&&!String(key).toLowerCase().endsWith('_url')&&!String(key).toLowerCase().endsWith('_uri')&&value!==null&&value!==undefined&&value!==''&&typeof value!=='object');
   }
   itemTitle(x){
     const named=this.pick(x,['full_name','first_initial_and_last_name','name','team_name','player_name','title','label','stat_name','category','type']);
@@ -71,7 +71,7 @@ class UsaSportsHubPanel extends HTMLElement {
   }
   infoGrid(obj,limit){
     if(!obj||typeof obj!=='object')return '';
-    return Object.entries(obj).filter(([key,value])=>!['api_uri','url','href','link','source_url','source','website','web_url','id','diagrams'].includes(key)&&value!==null&&value!==undefined&&value!==''&&typeof value!=='object').slice(0,limit||16).map(([key,value])=>'<div class="info-cell"><small>'+esc(this.prettyKey(key))+'</small><b>'+esc(value)+'</b></div>').join('');
+    return Object.entries(obj).filter(([key,value])=>!['api_uri','url','href','link','source_url','source','website','web_url','share_url','resource_uri','id','diagrams'].includes(key)&&!String(key).toLowerCase().endsWith('_url')&&!String(key).toLowerCase().endsWith('_uri')&&value!==null&&value!==undefined&&value!==''&&typeof value!=='object').slice(0,limit||16).map(([key,value])=>'<div class="info-cell"><small>'+esc(this.prettyKey(key))+'</small><b>'+esc(value)+'</b></div>').join('');
   }
   sensorData(sensor,name,kind){
     const value=sensor(name)?.attributes?.[name];
@@ -279,7 +279,7 @@ class UsaSportsHubPanel extends HTMLElement {
     const basic=all.find(g=>String(g.game_id)===String(this.selectedLiveGame))||{};
     const detail=this.sensorData(sensor,'game_detail','object');
     const loaded=String(detail.game_id||'')===String(this.selectedLiveGame);
-    const selected=loaded?Object.assign({},basic,detail):basic;
+    const game=loaded?Object.assign({},basic,detail):basic;
     const box=this.sensorData(sensor,'box_score','object');
     const plays=this.sensorData(sensor,'play_by_play');
     const stats=this.sensorData(sensor,'statistics');
@@ -296,68 +296,107 @@ class UsaSportsHubPanel extends HTMLElement {
     const stadium=this.sensorData(sensor,'stadium','object');
     const ticker=this.sensorData(sensor,'ticker');
     const related=this.sensorData(sensor,'related');
-    const status=selected.is_live?'LIVE':(selected.is_final?'FINAL':'GAME CENTRE');
-    const metric=(label,value,sub)=>'<article><small>'+label+'</small><b>'+esc(value)+'</b><span>'+esc(sub||'')+'</span></article>';
-    const metrics=[
-      metric('PLAY BY PLAY',plays.length,'events'),
-      metric('STATISTICS',stats.length,'records'),
-      metric('PLAYERS',players.length,'loaded'),
-      metric('LINEUPS',lineups.length,'records'),
-      metric('SCORING',scoring.length,'events'),
-      metric('INJURIES',injuries.length,'records'),
-      metric('LEADERS',leaders.length,'records'),
-      metric('RELATED',related.length,'records')
+    const standings=items('standings')||[];
+    const status=game.is_live?'LIVE':(game.is_final?'FINAL':'GAME CENTRE');
+    const accent=this.sport==='nba'?'#f4a340':this.sport==='nhl'?'#62d8ff':'#48c9ff';
+    const section=(title,body,count,cls='')=>'<section class="pro-card '+cls+'"><header><h3>'+title+'</h3>'+(count!==undefined?'<span>'+esc(count)+'</span>':'')+'</header><div class="pro-body">'+body+'</div></section>';
+    const pick=(row,keys)=>this.pick(row||{},keys);
+    const imgFor=row=>row?.headshot||row?.image||row?.headshot_url||row?.headshots?.w192xh192||row?.headshots?.large||'';
+    const personName=row=>pick(row,['player_name','full_name','name','first_initial_and_last_name'])||'Player';
+
+    const latestPlay=plays.length?plays[plays.length-1]:{};
+    const latestText=pick(latestPlay,['description','text','play_description','detail','event_description'])||'Live play information will appear here when available.';
+    const latestMeta=[pick(latestPlay,['period','quarter','segment_string','period_label']),pick(latestPlay,['clock','game_clock'])].filter(Boolean).join(' · ');
+
+    const playRows=plays.slice(-40).reverse().map(p=>'<div class="pro-play"><b>'+esc([pick(p,['period','quarter','segment_string']),pick(p,['clock','game_clock'])].filter(Boolean).join(' · '))+'</b><span>'+esc(pick(p,['description','text','play_description','detail','event_description'])||this.itemTitle(p))+'</span></div>').join('')||'<div class="pro-empty">No play-by-play supplied yet.</div>';
+
+    const statRows=stats.slice(0,64).map(row=>{
+      const title=this.itemTitle(row);
+      const pairs=this.scalarPairs(row).filter(([key])=>!['name','full_name','player_name','team_name','label','category','group','type','description'].includes(key)).slice(0,5);
+      return '<div class="pro-stat"><b>'+esc(title)+'</b><div>'+pairs.map(([k,v])=>'<span><small>'+esc(this.prettyKey(k))+'</small><strong>'+esc(v)+'</strong></span>').join('')+'</div></div>';
+    }).join('')||'<div class="pro-empty">No detailed statistics supplied yet.</div>';
+
+    const people=(lineups.length?lineups:players).filter(x=>x&&typeof x==='object').slice(0,42).map(row=>{
+      const name=personName(row),pos=pick(row,['position_abbreviation','position']),num=pick(row,['jersey_number','number']),head=imgFor(row);
+      return '<article class="pro-person">'+(head?'<img src="'+esc(head)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'<span class="pro-avatar">'+esc(String(name).charAt(0))+'</span>')+'<div><b>'+esc(name)+'</b><small>'+esc([pos,num?('#'+num):''].filter(Boolean).join(' · '))+'</small></div></article>';
+    }).join('')||'<div class="pro-empty">No player or lineup data supplied yet.</div>';
+
+    const leaderCards=leaders.slice(0,12).map(row=>{
+      const name=personName(row),head=imgFor(row),label=pick(row,['label','category','group','stat_name'])||'Leader',val=pick(row,['value','display_value','stat_value'])||this.itemValue(row)||'—';
+      return '<article class="pro-leader">'+(head?'<img src="'+esc(head)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'<span class="pro-avatar">'+esc(String(name).charAt(0))+'</span>')+'<div><small>'+esc(label)+'</small><b>'+esc(name)+'</b><strong>'+esc(val)+'</strong></div></article>';
+    }).join('')||'<div class="pro-empty">No game leaders supplied yet.</div>';
+
+    const scoringRows=scoring.slice(0,40).map(row=>'<div class="pro-list"><div><b>'+esc(this.itemTitle(row))+'</b><small>'+esc(this.itemMeta(row))+'</small></div><strong>'+esc(this.itemValue(row)||'')+'</strong></div>').join('')||'<div class="pro-empty">No scoring-event detail supplied yet.</div>';
+    const injuryRows=injuries.slice(0,24).map(row=>'<div class="pro-list"><div><b>'+esc(personName(row))+'</b><small>'+esc(pick(row,['position_abbreviation','position'])||'')+'</small></div><strong class="warn">'+esc(pick(row,['status','injury_status','injury','injury_type'])||'Reported')+'</strong></div>').join('')||'<div class="pro-empty">No published injury information for this game.</div>';
+    const officialRows=officials.slice(0,18).map(row=>'<div class="pro-list"><div><b>'+esc(pick(row,['name','full_name','official','referee'])||this.itemTitle(row))+'</b><small>'+esc(pick(row,['official_type','type','position'])||'Official')+'</small></div></div>').join('')||'<div class="pro-empty">No officials data supplied.</div>';
+
+    const periodCells=periods.slice(0,8).map((row,index)=>{
+      const p=pick(row,['period','quarter','segment','number'])||index+1;
+      const away=pick(row,['away_score','away_points','away_goals','away']),home=pick(row,['home_score','home_points','home_goals','home']);
+      return '<div class="pro-period"><small>'+esc(this.sport==='nba'?'Q'+p:this.sport==='nhl'?'P'+p:'Q'+p)+'</small><b>'+esc(away!==''?away:'–')+' <i>–</i> '+esc(home!==''?home:'–')+'</b></div>';
+    }).join('')||'<div class="pro-empty">No period scoring supplied yet.</div>';
+
+    const awayStanding=standings.find(row=>row.team===game.away_team)||{},homeStanding=standings.find(row=>row.team===game.home_team)||{};
+    const compare=(label,a,b)=>'<div class="pro-compare"><b>'+esc(a??'–')+'</b><span>'+esc(label)+'</span><b>'+esc(b??'–')+'</b></div>';
+    const gameInfo=[
+      ['Venue',game.venue||stadium.name],
+      ['Location',[game.location,stadium.city,stadium.state].filter(Boolean).join(', ')],
+      ['Watch',(game.broadcasts||[]).join(', ')],
+      ['Status',game.status_detail]
+    ].filter(([,v])=>v).map(([k,v])=>'<div class="pro-info"><small>'+k+'</small><b>'+esc(v)+'</b></div>').join('');
+
+    const situation=situations[0]||{};
+    let sitTitle='Current Situation',sitText='';
+    if(this.sport==='nfl'){
+      sitTitle='Down & Distance';
+      const down=pick(situation,['down','current_down']),dist=pick(situation,['distance','formatted_distance','yards_to_go']),pos=pick(situation,['possession','possession_team','yard_line']);
+      sitText=[down?('Down '+down):'',dist?('Distance '+dist):'',pos].filter(Boolean).join(' · ');
+    }else if(this.sport==='nba'){
+      sitTitle='On Court';
+      sitText=[game.period_label,game.clock,pick(situation,['possession','possession_team'])].filter(Boolean).join(' · ');
+    }else{
+      sitTitle='Ice Situation';
+      sitText=[game.period_label,game.clock,pick(situation,['strength','home_strength','away_strength']),pick(situation,['team_on_power_play','power_play'])?'Power Play':''].filter(Boolean).join(' · ');
+    }
+    if(!sitText)sitText=game.status_detail||'Waiting for live game updates.';
+
+    const metricData=[
+      ['PLAYS',plays.length],['STATS',stats.length],['PLAYERS',players.length],['LINEUPS',lineups.length],
+      [this.sport==='nhl'?'GOALS':'SCORING',scoring.length],['LEADERS',leaders.length],['INJURIES',injuries.length],['RELATED',related.length]
     ];
-    if(this.sport==='nfl')metrics.push(metric('DRIVES',drives.length,'possessions'));
-    const section=(title,body,count)=>'<article class="game-section"><header><b>'+title+'</b>'+(count!==undefined?'<span>'+esc(count)+'</span>':'')+'</header><div class="game-section-body">'+body+'</div></article>';
-    const lineupRows=this.detailRows(lineups.length?lineups:players,70)||'<div class="empty-live">No lineup/player details supplied for this game yet.</div>';
-    const statRows=this.detailRows(stats,100)||'<div class="empty-live">No detailed statistics supplied yet.</div>';
-    const leaderRows=this.detailRows(leaders,40)||'<div class="empty-live">No leaders supplied yet.</div>';
-    const scoringRows=this.detailRows(scoring,60)||'<div class="empty-live">No scoring-event detail supplied yet.</div>';
-    const injuryRows=this.detailRows(injuries,40)||'<div class="empty-live">No injury information supplied for this game.</div>';
-    const officialRows=this.detailRows(officials,30)||'<div class="empty-live">No officials data supplied.</div>';
-    const periodRows=this.detailRows(periods,50)||'<div class="empty-live">No period-by-period detail supplied yet.</div>';
-    const playRows=plays.slice(-120).reverse().map(p=>'<div class="play-row"><b>'+esc(this.pick(p,['clock','game_clock','segment_string','period','inning'])||'')+'</b><span>'+esc(this.pick(p,['description','text','play_description','detail','event_description'])||this.itemTitle(p))+'</span></div>').join('')||'<div class="empty-live">No play-by-play supplied yet.</div>';
-    const driveRows=this.detailRows(drives,40)||'<div class="empty-live">No drive data supplied yet.</div>';
-    const venueInfo=this.infoGrid(Object.assign({},selected.stadium_details||{},stadium),14)||'<div class="empty-live">No venue details supplied.</div>';
-    const oddsInfo=this.infoGrid(odds,12)||'<div class="empty-live">No odds data supplied.</div>';
-    const boxInfo=this.infoGrid(box,20)||'<div class="empty-live">No compact box-score fields supplied.</div>';
-    let sportFeature='';
-    if(this.sport==='nfl')sportFeature=section('DRIVES & POSSESSIONS',driveRows,drives.length);
-    if(this.sport==='nba')sportFeature=section('QUARTERS / PERIODS',periodRows,periods.length);
-    if(this.sport==='mlb')sportFeature=section('INNINGS / LINE SCORE',periodRows,periods.length);
-    if(this.sport==='nhl')sportFeature=section('PERIODS / GAME FLOW',periodRows,periods.length);
-    const comparison=(label,away,home)=>'<div class="rich-comparison-row"><b>'+esc(away||'–')+'</b><span>'+esc(label)+'</span><b>'+esc(home||'–')+'</b></div>';
-    const awayStanding=(items('standings')||[]).find(row=>row.team===selected.away_team)||{};
-    const homeStanding=(items('standings')||[]).find(row=>row.team===selected.home_team)||{};
-    const gameDetails=[selected.venue||stadium.name,[selected.location,stadium.city,stadium.state].filter(Boolean).join(', '),(selected.broadcasts||[]).join(', ')].filter(Boolean);
-    const situationText=this.pick(situations[0]||{},['description','name','clock_label','inning_ordinal','period_label'])||selected.status_detail||'Waiting for live game updates.';
-    return '<style>.rich-game-layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(270px,.55fr);gap:14px}.rich-game-main{min-width:0}.rich-game-aside{display:grid;align-content:start;gap:12px}.rich-game-aside .game-section{min-width:0}.rich-game-aside .game-section-body{max-height:none}.rich-comparison-row{display:grid;grid-template-columns:1fr minmax(70px,auto) 1fr;gap:8px;padding:10px 12px;border-bottom:1px solid #ffffff12;text-align:center}.rich-comparison-row span{color:#8faac3;font-size:.75rem}.rich-comparison-row b:first-child{text-align:left}.rich-comparison-row b:last-child{text-align:right}@media(max-width:1000px){.rich-game-layout{grid-template-columns:1fr}.rich-game-aside{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:700px){.rich-game-aside{grid-template-columns:1fr}}</style><section class="game-centre rich-game-centre '+esc(this.sport)+'">'+
-      '<div class="game-centre-top"><button class="live-back" data-live-close>← BACK</button><span class="game-status '+(selected.is_live?'live':'')+'">'+(selected.is_live?'<i></i> ':'')+status+'</span><small>'+(loaded?'FULL GAME DATA LOADED':'LOADING FULL GAME DATA…')+'</small></div>'+
-      '<div class="rich-game-layout"><main class="rich-game-main">'+
-      '<div class="game-scoreboard"><div class="team-side">'+this.gameLogo(selected.away_logo,selected.away_team)+'<h2>'+esc(selected.away_team||'Away')+'</h2><small>'+esc(selected.away_abbreviation||'')+'</small></div><div class="score-core"><span>'+esc([selected.period_label,selected.clock].filter(Boolean).join(' · '))+'</span><strong>'+esc(selected.away_score??'–')+' <i>–</i> '+esc(selected.home_score??'–')+'</strong><small>'+esc(selected.status_detail||'')+'</small></div><div class="team-side">'+this.gameLogo(selected.home_logo,selected.home_team)+'<h2>'+esc(selected.home_team||'Home')+'</h2><small>'+esc(selected.home_abbreviation||'')+'</small></div></div>'+
-      '<div class="venue-strip">'+esc([selected.venue,selected.location,(selected.broadcasts||[]).join(', ')].filter(Boolean).join(' · '))+'</div>'+
-      this.sportSituation(selected,box,situations)+
-      '<div class="game-metrics">'+metrics.join('')+'</div>'+
-      '<div class="game-section-grid">'+
-        section('LIVE PLAY-BY-PLAY',playRows,plays.length)+
+    if(this.sport==='nfl')metricData.push(['DRIVES',drives.length]);
+    const metrics=metricData.map(([k,v])=>'<article><small>'+k+'</small><b>'+esc(v)+'</b></article>').join('');
+
+    const extras=[
+      this.sport==='nfl'&&drives.length?section('DRIVES & POSSESSIONS',this.detailRows(drives,32),drives.length,'extra'):'',
+      section('BOX SCORE DETAILS','<div class="pro-info-grid">'+(this.infoGrid(box,24)||'<div class="pro-empty">No box score details supplied.</div>')+'</div>',undefined,'extra'),
+      section('ODDS','<div class="pro-info-grid">'+(this.infoGrid(odds,16)||'<div class="pro-empty">No odds data supplied.</div>')+'</div>',undefined,'extra'),
+      section('LIVE TICKER',this.detailRows(ticker,30)||'<div class="pro-empty">No ticker data supplied.</div>',ticker.length,'extra'),
+      section('RELATED GAME DATA',this.detailRows(related,30)||'<div class="pro-empty">No related game data supplied.</div>',related.length,'extra')
+    ].filter(Boolean).join('');
+
+    return '<style>'+
+      '.pro-game{display:grid;gap:14px}.pro-top{display:flex;align-items:center;gap:12px}.pro-top .live-back{margin-right:auto}.pro-loaded{font-size:.78rem;color:#8da7bb}.pro-score{display:grid;grid-template-columns:1fr minmax(220px,.72fr) 1fr;align-items:center;border:1px solid #1d6285;border-radius:14px;background:linear-gradient(120deg,#06172a,#020b14);padding:24px;box-shadow:0 12px 30px #0007}.pro-team{text-align:center}.pro-team img,.pro-team .live-team-logo{width:88px;height:88px;margin:auto;object-fit:contain}.pro-team h2{font-size:1.6rem;margin:9px 0 2px}.pro-team small{color:#8fa9bf}.pro-score-core{text-align:center}.pro-score-core span{display:block;color:'+accent+';font-size:1rem;font-weight:950}.pro-score-core strong{display:block;font-size:3.7rem;line-height:1;margin:8px 0}.pro-score-core i{font-style:normal;color:#6d8395}.pro-score-core small{color:#b1c3d1;font-size:.95rem}.pro-sit{border:1px solid #1f6687;background:#06243c;border-radius:10px;padding:13px 16px;display:flex;justify-content:space-between;gap:14px}.pro-sit b{color:'+accent+'}.pro-metrics{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:8px}.pro-metrics article{border:1px solid #1c5573;background:#041524;border-radius:9px;padding:11px}.pro-metrics small{display:block;color:#79bddb;font-size:.7rem;font-weight:950}.pro-metrics b{display:block;font-size:1.35rem;margin-top:3px}.pro-layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(310px,.65fr);gap:14px}.pro-main,.pro-side{display:grid;align-content:start;gap:14px}.pro-card{border:1px solid #1a5271;border-radius:11px;background:#03101cef;overflow:hidden}.pro-card>header{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:linear-gradient(90deg,#073258,#061624);border-bottom:1px solid #1d6285}.pro-card h3{margin:0;font-size:.94rem;letter-spacing:.04em}.pro-card>header span{background:#0b5a84;border-radius:999px;padding:3px 9px;font-size:.72rem}.pro-body{padding:14px}.pro-last b{display:block;font-size:1.1rem}.pro-last small{display:block;color:#84a9c2;margin-top:6px}.pro-periods{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px}.pro-period{border:1px solid #183e55;background:#020b12;border-radius:8px;padding:10px;text-align:center}.pro-period small{display:block;color:#7faec8;font-size:.72rem}.pro-period b{font-size:1rem}.pro-period i{font-style:normal;color:#708a9c}.pro-stat{display:grid;grid-template-columns:minmax(190px,.8fr) minmax(0,1.4fr);gap:16px;padding:13px 0;border-bottom:1px solid #ffffff12}.pro-stat:last-child{border-bottom:0}.pro-stat>b{font-size:.98rem}.pro-stat>div{display:flex;justify-content:flex-end;gap:7px;flex-wrap:wrap}.pro-stat span{min-width:88px;border:1px solid #183c51;border-radius:7px;background:#020c14;padding:7px 9px;text-align:right}.pro-stat small{display:block;color:#5db8e3;font-size:.6rem;text-transform:uppercase}.pro-stat strong{font-size:.92rem}.pro-people{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.pro-person,.pro-leader{display:flex;align-items:center;gap:10px;border:1px solid #173e55;background:#041522;border-radius:9px;padding:10px}.pro-person img,.pro-leader img,.pro-avatar{width:48px;height:48px;border-radius:50%;object-fit:cover}.pro-avatar{display:grid;place-items:center;background:#123b55;font-weight:900}.pro-person b,.pro-person small,.pro-leader b,.pro-leader small,.pro-leader strong{display:block}.pro-person small,.pro-leader small{color:#91a9ba}.pro-leader strong{color:'+accent+';font-size:1.12rem}.pro-leaders{display:grid;gap:8px}.pro-list,.pro-play{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid #ffffff12}.pro-list:last-child,.pro-play:last-child{border-bottom:0}.pro-list small{display:block;color:#8ca5b7;margin-top:2px}.pro-list strong{color:'+accent+';text-align:right}.pro-list .warn{color:#ff8494}.pro-play b{min-width:82px;color:'+accent+'}.pro-play span{flex:1}.pro-info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.pro-info{padding:10px 0;border-bottom:1px solid #ffffff12}.pro-info small{display:block;color:#6fc7eb;text-transform:uppercase;font-size:.66rem}.pro-info b{display:block;margin-top:3px}.pro-compare{display:grid;grid-template-columns:1fr 90px 1fr;gap:8px;text-align:center;padding:10px 0;border-bottom:1px solid #ffffff12}.pro-compare b:first-child{text-align:left}.pro-compare b:last-child{text-align:right}.pro-compare span{color:#91a9ba;font-size:.78rem}.pro-empty{padding:18px;text-align:center;color:#8fa6b8}.pro-more{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.pro-more .pro-body{max-height:330px;overflow:auto}@media(max-width:1200px){.pro-metrics{grid-template-columns:repeat(4,1fr)}.pro-people{grid-template-columns:repeat(2,1fr)}}@media(max-width:1000px){.pro-layout{grid-template-columns:1fr}.pro-side{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:700px){.pro-score{grid-template-columns:1fr}.pro-score-core{order:-1;margin-bottom:14px}.pro-side,.pro-more{grid-template-columns:1fr}.pro-people{grid-template-columns:1fr}.pro-stat{grid-template-columns:1fr}.pro-stat>div{justify-content:flex-start}.pro-metrics{grid-template-columns:repeat(2,1fr)}}'+
+      '</style><section class="game-centre pro-game '+esc(this.sport)+'">'+
+      '<div class="pro-top"><button class="live-back" data-live-close>← BACK</button><span class="game-status '+(game.is_live?'live':'')+'">'+(game.is_live?'<i></i> ':'')+status+'</span><small class="pro-loaded">'+(loaded?'FULL GAME DATA LOADED':'LOADING FULL GAME DATA…')+'</small></div>'+
+      '<div class="pro-score"><div class="pro-team">'+this.gameLogo(game.away_logo,game.away_team)+'<h2>'+esc(game.away_team||'Away')+'</h2><small>'+esc(game.away_abbreviation||'')+'</small></div><div class="pro-score-core"><span>'+esc([game.period_label,game.clock].filter(Boolean).join(' · ')||status)+'</span><strong>'+esc(game.away_score??'–')+' <i>–</i> '+esc(game.home_score??'–')+'</strong><small>'+esc(game.status_detail||'')+'</small></div><div class="pro-team">'+this.gameLogo(game.home_logo,game.home_team)+'<h2>'+esc(game.home_team||'Home')+'</h2><small>'+esc(game.home_abbreviation||'')+'</small></div></div>'+
+      '<div class="pro-sit"><b>'+esc(sitTitle)+'</b><span>'+esc(sitText)+'</span></div>'+
+      '<div class="pro-metrics">'+metrics+'</div>'+
+      '<div class="pro-layout"><main class="pro-main">'+
+        section('LATEST PLAY','<div class="pro-last"><b>'+esc(latestText)+'</b>'+(latestMeta?'<small>'+esc(latestMeta)+'</small>':'')+'</div>')+
+        section(this.sport==='nba'?'QUARTER SCORING':this.sport==='nhl'?'PERIOD SCORING':'QUARTER SCORING','<div class="pro-periods">'+periodCells+'</div>',periods.length)+
         section('TEAM / PLAYER STATISTICS',statRows,stats.length)+
-        sportFeature+
+        section('PLAYERS & LINEUPS','<div class="pro-people">'+people+'</div>',lineups.length||players.length)+
         section('SCORING SUMMARY',scoringRows,scoring.length)+
-        section('LINEUPS & PLAYERS',lineupRows,lineups.length||players.length)+
-        section('GAME LEADERS',leaderRows,leaders.length)+
+        section('PLAY-BY-PLAY',playRows,plays.length)+
+      '</main><aside class="pro-side">'+
+        section('GAME DETAILS',gameInfo||'<div class="pro-empty">Game details are loading.</div>')+
+        section('TEAM COMPARISON',compare('Record',awayStanding.record||awayStanding.short_record,homeStanding.record||homeStanding.short_record)+compare('Home / Away',awayStanding.away_record||awayStanding.short_away_record,homeStanding.home_record||homeStanding.short_home_record)+compare('Last 10',awayStanding.last_ten||awayStanding.last_ten_games_record,homeStanding.last_ten||homeStanding.last_ten_games_record)+compare('Streak',awayStanding.streak,homeStanding.streak))+
+        section('GAME LEADERS','<div class="pro-leaders">'+leaderCards+'</div>',leaders.length)+
         section('INJURIES',injuryRows,injuries.length)+
         section('OFFICIALS',officialRows,officials.length)+
-        section('BOX SCORE DETAILS','<div class="info-grid">'+boxInfo+'</div>')+
-        section('VENUE','<div class="info-grid">'+venueInfo+'</div>')+
-        section('ODDS','<div class="info-grid">'+oddsInfo+'</div>')+
-        section('LIVE TICKER',this.detailRows(ticker,30)||'<div class="empty-live">No ticker items supplied.</div>',ticker.length)+
-        section('RELATED GAME DATA',this.detailRows(related,40)||'<div class="empty-live">No related game data supplied.</div>',related.length)+
-      '</div></main><aside class="rich-game-aside">'+
-        section('GAME DETAILS','<div class="info-grid">'+(gameDetails.map((value,index)=>'<div class="info-cell"><small>'+(['VENUE','LOCATION','WATCH ON'][index])+'</small><b>'+esc(value)+'</b></div>').join('')||'<div class="empty-live">Details are loading.</div>')+'</div>')+
-        section('CURRENT SITUATION','<div class="detail-row"><b>'+esc(situationText)+'</b><strong>'+esc([selected.period_label,selected.clock].filter(Boolean).join(' · ')||status)+'</strong></div>')+
-        section('TEAM COMPARISON',comparison('Record',awayStanding.record||awayStanding.short_record,homeStanding.record||homeStanding.short_record)+comparison('Home / Away',awayStanding.away_record||awayStanding.short_away_record,homeStanding.home_record||homeStanding.short_home_record)+comparison('Last 10',awayStanding.last_ten||awayStanding.last_ten_games_record,homeStanding.last_ten||homeStanding.last_ten_games_record)+comparison('Streak',awayStanding.streak,homeStanding.streak))+
-      '</aside></div></section>';
+      '</aside></div>'+
+      '<div class="pro-more">'+extras+'</div></section>';
   }
 
   sportOverviewExtras(items,sensor){
