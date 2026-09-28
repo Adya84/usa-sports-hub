@@ -119,6 +119,13 @@ test('header displays a central under-construction notice without replacing cont
   assert.match(source, /New features are being built/);
 });
 
+test('mobile header keeps country, league and team selectors available', () => {
+  const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
+  assert.match(source, /@media\(max-width:1050px\)\{\.mast\{flex-wrap:wrap/);
+  assert.match(source, /\.top\{display:flex;margin-left:0;order:3;width:100%;overflow-x:auto/);
+  assert.match(source, /\.top \.select\{flex:1 0 142px\}/);
+});
+
 test('non-MLB selected games hide another game and raw API dumps while loading', () => {
   const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
   for (const value of ['usaRichGameCentre', 'selectedGameKey', 'Loading full game data — this can take up to 30 seconds', 'safeSensor', "const extras=this.sport==='nfl'&&drives.length", 'cleanLineups', 'cleanPlayers', 'team_full_name']) {

@@ -1107,7 +1107,7 @@ UsaSportsHubPanel.prototype.render=function(){
   notice.innerHTML='<b>⚠ UNDER CONSTRUCTION</b><small>New features are being built</small>';
   mast.querySelector('.brand')?.insertAdjacentElement('afterend',notice);
   const style=document.createElement('style');
-  style.textContent='.construction-notice{display:grid;justify-items:center;gap:2px;margin:0 auto;padding:8px 18px;border:1px solid #e3b34199;border-radius:999px;background:linear-gradient(135deg,#2a210c,#101b2c);box-shadow:0 0 18px #e3b34122;color:#ffe39a;text-align:center;line-height:1.05}.construction-notice b{font-size:.74rem;letter-spacing:.13em}.construction-notice small{color:#bbcae1;font-size:.64rem}@media(max-width:1050px){.construction-notice{display:none}}';
+  style.textContent='.construction-notice{display:grid;justify-items:center;gap:2px;margin:0 auto;padding:8px 18px;border:1px solid #e3b34199;border-radius:999px;background:linear-gradient(135deg,#2a210c,#101b2c);box-shadow:0 0 18px #e3b34122;color:#ffe39a;text-align:center;line-height:1.05}.construction-notice b{font-size:.74rem;letter-spacing:.13em}.construction-notice small{color:#bbcae1;font-size:.64rem}@media(max-width:1050px){.mast{flex-wrap:wrap;gap:12px}.top{display:flex;margin-left:0;order:3;width:100%;overflow-x:auto;padding-bottom:2px}.top .select{flex:1 0 142px}.construction-notice{display:none}}';
   this.shadowRoot.append(style);
 };
 customElements.define('usa-sports-hub-panel',UsaSportsHubPanel);
