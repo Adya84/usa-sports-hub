@@ -30,11 +30,17 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
         self.selected_live_game_id = None
         self.selected_live_sport = None
         stored_favourites = entry.options.get("team_favourites", [])
-        self.team_favourites = [
-            {"sport": str(item.get("sport") or "").lower(), "team_id": str(item.get("team_id") or ""), "team": str(item.get("team") or "")}
-            for item in stored_favourites
-            if isinstance(item, dict) and str(item.get("sport") or "").lower() in SPORTS and str(item.get("team_id") or "").strip()
-        ][:3]
+        self.team_favourites = []
+        for item in stored_favourites:
+            sport = str(item.get("sport") or "").lower() if isinstance(item, dict) else ""
+            team_id = str(item.get("team_id") or "").strip() if isinstance(item, dict) else ""
+            if sport not in SPORTS or not team_id:
+                continue
+            if any(saved["sport"] == sport and saved["team_id"] == team_id for saved in self.team_favourites):
+                continue
+            if sum(saved["sport"] == sport for saved in self.team_favourites) >= 3:
+                continue
+            self.team_favourites.append({"sport": sport, "team_id": team_id, "team": str(item.get("team") or "")})
         self.selected_team_ids = {
             item["sport"]: item["team_id"] for item in self.team_favourites
         }
@@ -152,8 +158,8 @@ class UsaSportsCoordinator(DataUpdateCoordinator):
         sport, team_id = self._team_cache_key(sport, team_id)
         record = {"sport": sport, "team_id": team_id, "team": str(team or "").strip() or "Team"}
         if not any(item["sport"] == sport and item["team_id"] == team_id for item in self.team_favourites):
-            if len(self.team_favourites) >= 3:
-                raise ValueError("A maximum of three favourite teams is supported")
+            if sum(item["sport"] == sport for item in self.team_favourites) >= 3:
+                raise ValueError("A maximum of three favourite teams per sport is supported")
             self.team_favourites.append(record)
             self._save_team_favourites()
         await self.async_select_team(sport, team_id)

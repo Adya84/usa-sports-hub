@@ -1109,5 +1109,48 @@ UsaSportsHubPanel.prototype.render=function(){
   const style=document.createElement('style');
   style.textContent='.construction-notice{display:grid;justify-items:center;gap:2px;margin:0 auto;padding:8px 18px;border:1px solid #e3b34199;border-radius:999px;background:linear-gradient(135deg,#2a210c,#101b2c);box-shadow:0 0 18px #e3b34122;color:#ffe39a;text-align:center;line-height:1.05}.construction-notice b{font-size:.74rem;letter-spacing:.13em}.construction-notice small{color:#bbcae1;font-size:.64rem}@media(max-width:1050px){.mast{flex-wrap:wrap;gap:12px}.top{display:flex;margin-left:0;order:3;width:100%;overflow-x:auto;padding-bottom:2px}.top .select{flex:1 0 142px}.construction-notice{display:none}}';
   this.shadowRoot.append(style);
+  this.shadowRoot.querySelectorAll('[data-open-favourite]').forEach(button=>{
+    const cleanButton=button.cloneNode(true);
+    button.replaceWith(cleanButton);
+    cleanButton.addEventListener('click',()=>{
+      const [sport,teamId]=cleanButton.dataset.openFavourite.split('|');
+      const teams=this._hass?.states?.[`sensor.usa_sports_hub_${sport}_teams`]?.attributes?.teams||[];
+      const team=teams.find(item=>String(item.id)===teamId)?.name||cleanButton.textContent.trim();
+      this.sport=sport; this.team=team; this.tab='My Team'; this.selectedLiveGame='';
+      localStorage.setItem('usa_sports_hub_selected_sport',sport);
+      localStorage.setItem(`usa_sports_hub_${sport}_team`,team);
+      localStorage.setItem(`usa_sports_hub_${sport}_tab`,'My Team');
+      this._hass?.callService('usa_sports_hub','select_team',{sport,team_id:teamId}).catch(err=>console.warn('USA Sports Hub favourite selection failed',err));
+      this.render();
+    });
+  });
+};
+
+const usaFavouriteSensor=(sport,sensor)=>section=>{
+  const value=sensor(section);
+  if(section!=='status'||!value?.attributes)return value;
+  return {...value,attributes:{...value.attributes,team_favourites:(value.attributes.team_favourites||[]).filter(item=>item.sport===sport)}};
+};
+for(const method of ['mlbDataPage','nflDataPage','nbaDataPage','nhlDataPage']){
+  const original=UsaSportsHubPanel.prototype[method];
+  UsaSportsHubPanel.prototype[method]=function(s,tab,items,sensor,...args){return original.call(this,s,tab,items,usaFavouriteSensor(this.sport,sensor),...args);};
+}
+const usaFavouriteRichGameCentre=UsaSportsHubPanel.prototype.richGameCentre;
+UsaSportsHubPanel.prototype.richGameCentre=function(s,items,sensor){return usaFavouriteRichGameCentre.call(this,s,items,usaFavouriteSensor(this.sport,sensor));};
+
+const usaFavouriteSelectSport=UsaSportsHubPanel.prototype.selectSport;
+UsaSportsHubPanel.prototype.selectSport=function(sport){
+  usaFavouriteSelectSport.call(this,sport);
+  this.team=localStorage.getItem(`usa_sports_hub_${sport}_team`)||'';
+  this.render();
+};
+const usaFavouriteSelectTeam=UsaSportsHubPanel.prototype.selectTeam;
+UsaSportsHubPanel.prototype.selectTeam=function(team){
+  usaFavouriteSelectTeam.call(this,team);
+  localStorage.setItem(`usa_sports_hub_${this.sport}_team`,team||'');
+  const teams=this._hass?.states?.[`sensor.usa_sports_hub_${this.sport}_teams`]?.attributes?.teams||[];
+  const selected=teams.find(item=>item.name===team||item.full_name===team);
+  if(selected?.id)this._hass?.callService('usa_sports_hub','select_team',{sport:this.sport,team_id:String(selected.id)}).catch(err=>console.warn('USA Sports Hub team selection failed',err));
+  this.render();
 };
 customElements.define('usa-sports-hub-panel',UsaSportsHubPanel);

@@ -126,6 +126,13 @@ test('mobile header keeps country, league and team selectors available', () => {
   assert.match(source, /\.top \.select\{flex:1 0 142px\}/);
 });
 
+test('team selection and favourites work independently for every sport', () => {
+  const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
+  for (const value of ['usaFavouriteSelectSport', 'usaFavouriteSelectTeam', 'usa_sports_hub_${sport}_team', "callService('usa_sports_hub','select_team'", 'data-open-favourite', 'localStorage.setItem(`usa_sports_hub_${sport}_tab`']) {
+    assert.ok(source.includes(value), value + ' should support persistent cross-sport favourites');
+  }
+});
+
 test('non-MLB selected games hide another game and raw API dumps while loading', () => {
   const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
   for (const value of ['usaRichGameCentre', 'selectedGameKey', 'Loading full game data — this can take up to 30 seconds', 'safeSensor', "const extras=this.sport==='nfl'&&drives.length", 'cleanLineups', 'cleanPlayers', 'team_full_name']) {

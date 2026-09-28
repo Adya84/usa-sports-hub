@@ -40,6 +40,13 @@ class IntegrationIdentityTests(unittest.TestCase):
         self.assertIn('"add_team_favourite"', setup)
         self.assertIn('"remove_team_favourite"', setup)
 
+    def test_favourites_are_limited_per_sport_not_across_the_hub(self):
+        coordinator = Path("custom_components/usa_sports_hub/coordinator.py").read_text(encoding="utf-8")
+
+        self.assertIn('sum(item["sport"] == sport for item in self.team_favourites) >= 3', coordinator)
+        self.assertIn('A maximum of three favourite teams per sport is supported', coordinator)
+        self.assertNotIn('        ][:3]', coordinator)
+
     def test_cache_schema_remains_compatible_with_existing_installations(self):
         source = Path("custom_components/usa_sports_hub/coordinator.py").read_text(encoding="utf-8")
         self.assertIn("CACHE_VERSION = 1", source)
