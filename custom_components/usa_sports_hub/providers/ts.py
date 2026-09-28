@@ -285,6 +285,48 @@ class TSProvider(ProviderClient):
             "stadium": event.get("stadium_details") or {},
         }
 
+        # Event feeds only expose a handful of participants for NFL, NBA and
+        # NHL. Fetch both clubs' dedicated player lists so the game centre can
+        # show complete rosters rather than pretending that partial records are
+        # a starting lineup.
+        team_roster_ids = [
+            (str(team.get("id") or ""), str(team.get("full_name") or team.get("name") or "Team"))
+            for team in (event.get("away_team"), event.get("home_team"))
+            if isinstance(team, dict) and team.get("id") is not None
+        ]
+        game_roster_players: list[dict[str, Any]] = []
+        if self.league != "mlb" and team_roster_ids:
+            roster_payloads = await asyncio.gather(
+                *(self.async_get_json(f"{self.base}/teams/{team_id}/players") for team_id, _ in team_roster_ids),
+                return_exceptions=True,
+            )
+            for (_, team_name), payload in zip(team_roster_ids, roster_payloads):
+                rows = payload if isinstance(payload, list) else payload.get("players", []) if isinstance(payload, dict) else []
+                if not isinstance(rows, list):
+                    continue
+                for item in rows:
+                    person = item.get("player") if isinstance(item, dict) and isinstance(item.get("player"), dict) else item
+                    if not isinstance(person, dict):
+                        continue
+                    name = person.get("full_name") or person.get("first_initial_and_last_name") or person.get("name")
+                    if not name:
+                        continue
+                    position = person.get("position")
+                    if isinstance(position, dict):
+                        position = position.get("abbreviation") or position.get("short_name") or position.get("name")
+                    headshots = person.get("headshots") if isinstance(person.get("headshots"), dict) else {}
+                    game_roster_players.append(
+                        {
+                            "id": str(person.get("id") or person.get("player_id") or ""),
+                            "player_id": str(person.get("id") or person.get("player_id") or ""),
+                            "full_name": name,
+                            "team_name": team_name,
+                            "position_abbreviation": person.get("position_abbreviation") or position or "",
+                            "jersey_number": person.get("number") or person.get("jersey_number"),
+                            "headshot": headshots.get("w192xh192") or headshots.get("large") or person.get("headshot") or person.get("image"),
+                        }
+                    )
+
         # NFL exposes drive endpoints whose payloads contain the full play list.
         drive_uris = _api_uris(box_score, f"/{self.league}/drives/")[:24]
         if drive_uris:
@@ -498,6 +540,8 @@ class TSProvider(ProviderClient):
             + _named_lists(combined, {"players", "roster", "rosters", "skaters", "goalies"}, 160),
             160,
         )
+        if game_roster_players:
+            detail["players"] = _dedupe_dicts(game_roster_players, 160)
         # When an MLB event has not yet resolved to the official MLB live feed,
         # retain only real theScore roster people. The raw recursive collection
         # also contains teams/leagues, which previously appeared in the Players
@@ -556,6 +600,8 @@ class TSProvider(ProviderClient):
             ),
             140,
         )
+        if game_roster_players:
+            detail["lineups"] = detail["players"]
         detail["statistics"] = _dedupe_dicts(
             _objects_with_keys(
                 combined,

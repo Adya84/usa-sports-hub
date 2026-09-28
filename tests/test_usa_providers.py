@@ -19,6 +19,11 @@ normalize_team_detail = models.normalize_ts_team_detail
 
 
 class ProviderModelTests(unittest.TestCase):
+
+    def test_game_detail_fetches_both_team_rosters_for_non_mlb_sports(self):
+        source = Path("custom_components/usa_sports_hub/providers/ts.py").read_text(encoding="utf-8")
+        for value in ("team_roster_ids", "teams/{team_id}/players", "game_roster_players"):
+            self.assertIn(value, source)
     def test_team_detail_normalizes_profile_and_squad(self):
         detail = normalize_team_detail(
             "mlb",

@@ -105,7 +105,7 @@ test('non-baseball selected games use sport-specific live-situation labels and f
 
 test('NFL NBA and NHL clicked games use a polished sport-specific game centre', () => {
   const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
-  for (const value of ['pro-score','pro-people','pro-leader','LATEST PLAY','PLAYERS & LINEUPS','TEAM COMPARISON','DRIVES & POSSESSIONS']) {
+  for (const value of ['pro-score','pro-people','pro-leader','LATEST PLAY','TEAM ROSTERS','TEAM COMPARISON','DRIVES & POSSESSIONS']) {
     assert.ok(source.includes(value), value + ' should exist in the polished live game centre');
   }
   assert.match(source, /if\(this\.sport==='mlb'\)return this\.mlbGameCentre/);
@@ -116,5 +116,12 @@ test('non-MLB selected games hide another game and raw API dumps while loading',
   const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
   for (const value of ['usaRichGameCentre', 'selectedGameKey', 'Loading full game data — this can take up to 30 seconds', 'safeSensor', "const extras=this.sport==='nfl'&&drives.length", 'cleanLineups', 'cleanPlayers', 'team_full_name']) {
     assert.ok(source.includes(value), value + ' should protect non-MLB selected-game detail');
+  }
+});
+
+test('non-MLB statistic cards require a named player or team', () => {
+  const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
+  for (const value of ['validStats', 'team_full_name', 'metricData.filter(([,value])=>Number(value)>0)']) {
+    assert.ok(source.includes(value), value + ' should prevent anonymous raw statistic rows');
   }
 });
