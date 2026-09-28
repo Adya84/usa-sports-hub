@@ -121,7 +121,7 @@ test('header displays a central under-construction notice without replacing cont
 
 test('mobile header keeps country, league and team selectors available', () => {
   const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
-  assert.match(source, /@media\(max-width:1050px\)\{\.mast\{flex-wrap:wrap/);
+  assert.match(source, /@media\(max-width:1350px\)\{\.mast\{flex-wrap:wrap/);
   assert.match(source, /\.top\{display:grid;margin-left:0;order:3;width:100%;grid-template-columns:repeat\(3,minmax\(0,1fr\)\);overflow:visible/);
   assert.match(source, /@media\(max-width:700px\)\{\.top\{grid-template-columns:1fr\}\}/);
 });
