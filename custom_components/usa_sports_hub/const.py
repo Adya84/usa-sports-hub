@@ -2,4 +2,4 @@
 
 DOMAIN = "usa_sports_hub"
 NAME = "USA Sports Hub"
-VERSION = "0.0.6-beta.1"
+VERSION = "0.0.6-beta.2"
