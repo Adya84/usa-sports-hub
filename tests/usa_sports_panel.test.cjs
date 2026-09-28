@@ -93,9 +93,9 @@ test('NHL provider recognises hockey-specific live and stat fields', () => {
   }
 });
 
-test('non-baseball selected games use the rich shared game-centre and favourites pattern', () => {
+test('non-baseball selected games use sport-specific live-situation labels and favourites', () => {
   const source = fs.readFileSync('custom_components/usa_sports_hub/frontend/usa-sports-hub-panel.js', 'utf8');
-  for (const value of ['richGameCentre', 'GAME DETAILS', 'CURRENT SITUATION', 'TEAM COMPARISON', 'MY FAVOURITES', 'data-add-favourite', 'data-open-favourite']) {
+  for (const value of ['richGameCentre', 'GAME DETAILS', 'Down & Distance', 'On Court', 'Ice Situation', 'TEAM COMPARISON', 'MY FAVOURITES', 'data-add-favourite', 'data-open-favourite']) {
     assert.ok(source.includes(value), value + ' should be present in the shared sport experience');
   }
   assert.match(source, /if\(this\.sport==='mlb'\)return this\.mlbGameCentre/);
